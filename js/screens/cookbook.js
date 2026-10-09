@@ -1,6 +1,6 @@
 // Our Cookbook: recipes made from Fridge/Bar items.
 import * as N from '../nutrition.js';
-import { esc, fmt0, kcal, kj, macroLine, sourceBadge, openSheet, saving, icon } from '../ui.js';
+import { esc, fmt0, kcal, kj, macroLine, sourceBadge, openSheet, saveInBackground, icon } from '../ui.js';
 import { ingredientEditor, previewTotals } from './ingredients.js';
 import { openLogSheet } from './log.js';
 
@@ -62,24 +62,22 @@ function openRecipeForm(app, recipe = null) {
     $('servings').oninput = draw;
     draw();
 
-    $('save').onclick = async (e) => {
+    $('save').onclick = () => {
       const vals = { name: $('name').value.trim(), servings: N.num($('servings').value), notes: $('notes').value.trim() };
       if (!vals.name) return $('name').focus();
       if (vals.servings <= 0) return $('servings').focus();
       const ings = editor.get();
       if (!ings.length) return alert('Add at least one ingredient.');
-      const res = await saving(e.currentTarget,
-        () => app.store.saveWithIngredients('recipes', recipe?.id || null, vals, 'recipe', ings),
-        `Saved ${vals.name}`);
-      if (res.ok) { close(); app.refresh(); }
+      close();
+      saveInBackground(app, () => app.store.saveWithIngredients('recipes', recipe?.id || null, vals, 'recipe', ings), `Saved ${vals.name}`);
     };
 
     $('log')?.addEventListener('click', () => { close(); setTimeout(() => openLogSheet(app, { type: 'recipe', item: recipe }), 320); });
 
-    $('delete')?.addEventListener('click', async (e) => {
+    $('delete')?.addEventListener('click', () => {
       if (!confirm(`Delete ${recipe.name}? Your past log entries are kept.`)) return;
-      const res = await saving(e.currentTarget, () => app.store.remove('recipes', recipe.id), `Deleted ${recipe.name}`);
-      if (res.ok) { close(); app.refresh(); }
+      close();
+      saveInBackground(app, () => app.store.remove('recipes', recipe.id), `Deleted ${recipe.name}`);
     });
   });
 }

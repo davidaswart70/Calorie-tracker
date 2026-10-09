@@ -1,6 +1,6 @@
 // Reports: daily and weekly intake, biggest calorie sources, weight tracking.
 import * as N from '../nutrition.js';
-import { esc, fmt0, fmt1, kcal, kj, macroLine, prettyDate, icon, seg, wireSegs, saving } from '../ui.js';
+import { esc, fmt0, fmt1, kcal, kj, macroLine, prettyDate, icon, seg, wireSegs, saveInBackground } from '../ui.js';
 import { logRow, wireDeletes, openLogSheet } from './log.js';
 
 export function render(el, app) {
@@ -203,21 +203,18 @@ function weightTab(el, app) {
         <div class="value num">${fmt1(w.weightKg)} kg</div>
         <button class="icon-btn plain" data-delw="${esc(w.id)}" aria-label="Delete">${icon.trash}</button></li>`).join('')}</ul></section>` : ''}`;
 
-  el.querySelector('#save').onclick = async (e) => {
+  el.querySelector('#save').onclick = () => {
     const kg = N.num(el.querySelector('#kg').value);
     const date = el.querySelector('#date').value || today;
     if (kg <= 0) return el.querySelector('#kg').focus();
-    const res = await saving(e.currentTarget, async () => {
-      await app.store.saveWeight(date, kg);
-      // Keep the profile weight (used for the calorie target) up to date with the newest entry.
-      if (!latest || date >= latest.date) await app.store.saveSettings({ weightKg: kg });
-    }, `Saved ${fmt1(kg)} kg`);
-    if (res.ok) app.refresh();
+    // The newest weight also updates the profile weight (used for the calorie target), in the same request.
+    saveInBackground(app,
+      () => (!latest || date >= latest.date ? app.store.saveSettings({ weightKg: kg }, { date, weightKg: kg }) : app.store.saveWeight(date, kg)),
+      `Saved ${fmt1(kg)} kg`);
   };
-  el.querySelectorAll('[data-delw]').forEach((b) => (b.onclick = async () => {
+  el.querySelectorAll('[data-delw]').forEach((b) => (b.onclick = () => {
     if (!confirm('Delete this weight entry?')) return;
-    const res = await saving(null, () => app.store.remove('weights', b.dataset.delw), 'Weight entry deleted');
-    if (res.ok) app.refresh();
+    saveInBackground(app, () => app.store.remove('weights', b.dataset.delw), 'Weight entry deleted');
   }));
 
   if (weights.length > 1) lineChart(el.querySelector('#weight-chart'), weights);

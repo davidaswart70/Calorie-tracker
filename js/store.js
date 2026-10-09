@@ -96,6 +96,7 @@ export async function saveWeight(date, weightKg) {
   return (await call('saveWeight', { date, weightKg })).row;
 }
 
-export async function saveSettings(values) {
-  await call('saveSettings', { values });
+/** Merge key/value pairs into Settings; optionally also save a weight ({ date, weightKg }) in the same request. */
+export async function saveSettings(values, weight = null) {
+  await call('saveSettings', { values, weight });
 }

@@ -74,6 +74,19 @@ test('saveSettings inserts and updates keys', () => {
   b.call('saveSettings', { values: { sex: 'male', age: 40 } });
   const res = b.call('saveSettings', { values: { age: 41, goal: 'lose' } });
   assert.deepEqual(res.data.settings, { sex: 'male', age: '41', goal: 'lose' });
+  const both = b.call('saveSettings', { values: { weightKg: 80 }, weight: { date: '2026-10-09', weightKg: 80 } });
+  assert.equal(both.data.settings.weightKg, '80');
+  assert.deepEqual(both.data.weights.map((w) => w.weightKg), ['80']);
+});
+
+test('ingredients of other recipes are kept when one recipe changes', () => {
+  const b = backend();
+  const ing = (id) => ({ itemType: 'food', itemId: id, quantity: 1, unit: 'g' });
+  const a = b.call('saveWithIngredients', { table: 'recipes', id: null, row: { name: 'A' }, parentType: 'recipe', list: [ing('x'), ing('y')] }).row.id;
+  const c = b.call('saveWithIngredients', { table: 'recipes', id: null, row: { name: 'C' }, parentType: 'recipe', list: [ing('z')] }).row.id;
+  const res = b.call('saveWithIngredients', { table: 'recipes', id: a, row: { name: 'A2' }, parentType: 'recipe', list: [] });
+  assert.deepEqual(res.data.ingredients.map((i) => [i.parentId, i.itemId]), [[c, 'z']]);
+  assert.equal(res.data.recipes.find((r) => r.id === a).name, 'A2');
 });
 
 test('columns are matched by header name, and Date cells come back as yyyy-mm-dd', () => {

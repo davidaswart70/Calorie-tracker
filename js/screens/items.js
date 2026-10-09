@@ -1,6 +1,6 @@
 // Our Fridge (foods) and Our Bar (drinks): list, add, edit, delete.
 import * as N from '../nutrition.js';
-import { esc, fmt0, fmt1, kcal, kj, macroLine, sourceBadge, openSheet, saving, seg, segValue, wireSegs, icon } from '../ui.js';
+import { esc, fmt0, fmt1, kcal, kj, macroLine, sourceBadge, openSheet, saveInBackground, seg, segValue, wireSegs, icon } from '../ui.js';
 import { ingredientEditor, previewTotals } from './ingredients.js';
 import { openLogSheet } from './log.js';
 
@@ -161,28 +161,28 @@ function openItemForm(app, type, item = null, presetName = '') {
     draw();
     if (isNew && !v.name) $('name').focus();
 
-    $('save').onclick = async (e) => {
+    $('save').onclick = () => {
       const vals = values();
       if (!vals.name) return $('name').focus();
       if (!composite && vals.kcal === '') return $('kcal').focus();
       const ings = editor?.get() || [];
       if (composite && !ings.length) return alert('Add at least one ingredient, or switch off “Made from ingredients”.');
 
-      const res = await saving(e.currentTarget, () => {
+      close();
+      saveInBackground(app, () => {
         if (type === 'drink') return app.store.saveWithIngredients(cfg.table, item?.id || null, vals, 'drink', composite ? ings : []);
         return isNew ? app.store.add(cfg.table, vals) : app.store.update(cfg.table, item.id, vals);
       }, `Saved ${vals.name}`);
-      if (res.ok) { close(); app.refresh(); }
     };
 
     $('log')?.addEventListener('click', () => { close(); setTimeout(() => openLogSheet(app, { type, item }), 320); });
 
-    $('delete')?.addEventListener('click', async (e) => {
+    $('delete')?.addEventListener('click', () => {
       const usedIn = app.data.ingredients.filter((i) => i.itemType === type && i.itemId === item.id).length;
       const warn = usedIn ? `\n\nIt is used as an ingredient ${usedIn} time${usedIn === 1 ? '' : 's'}; those recipes/drinks will show it as missing.` : '';
       if (!confirm(`Delete ${item.name}?${warn}\n\nYour past log entries are kept.`)) return;
-      const res = await saving(e.currentTarget, () => app.store.remove(cfg.table, item.id), `Deleted ${item.name}`);
-      if (res.ok) { close(); app.refresh(); }
+      close();
+      saveInBackground(app, () => app.store.remove(cfg.table, item.id), `Deleted ${item.name}`);
     });
   });
 }

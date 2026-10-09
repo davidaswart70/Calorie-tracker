@@ -59,7 +59,34 @@ export function toast(message, kind = 'ok') {
   el.textContent = message;
   el.className = `toast glass show ${kind}`;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (el.className = `toast glass ${kind}`), kind === 'error' ? 5000 : 2400);
+  // A "pending" toast stays until the next message replaces it.
+  if (kind !== 'pending') toastTimer = setTimeout(() => (el.className = `toast glass ${kind}`), kind === 'error' ? 6000 : 2400);
+}
+
+// ---------- Background saving ----------
+
+let pendingSaves = 0;
+window.addEventListener('beforeunload', (e) => {
+  if (pendingSaves) { e.preventDefault(); e.returnValue = ''; }
+});
+
+/**
+ * Save without making the user wait: shows "Saving…" until Google Sheets confirms,
+ * then a success message and fresh data, or an error saying it was not saved.
+ */
+export function saveInBackground(app, action, successMessage) {
+  pendingSaves++;
+  toast('Saving…', 'pending');
+  action()
+    .then(() => {
+      pendingSaves--;
+      toast(pendingSaves ? 'Saving…' : successMessage, pendingSaves ? 'pending' : 'ok');
+      app.refresh();
+    })
+    .catch((err) => {
+      pendingSaves--;
+      toast(err.message || 'Save failed. Nothing was saved.', 'error');
+    });
 }
 
 // ---------- Bottom sheet ----------
