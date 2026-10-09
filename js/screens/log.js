@@ -1,6 +1,6 @@
 // Bottom sheets for logging food/drinks/recipes and exercise.
 import * as N from '../nutrition.js';
-import { esc, fmt0, fmt1, kcal, kj, macroLine, sourceBadge, openSheet, saveInBackground, seg, segValue, wireSegs, icon, unitLabel } from '../ui.js';
+import { esc, fmt0, fmt1, kcal, kj, macroLine, sourceBadge, openSheet, saveInBackground, seg, segValue, wireSegs, icon, unitLabel, foodEmoji } from '../ui.js';
 
 const TYPE_LABEL = { food: 'Fridge', drink: 'Bar', recipe: 'Cookbook' };
 const round1 = (v) => Math.round(v * 10) / 10;
@@ -54,6 +54,7 @@ export function openLogSheet(app, pre = null, date = N.dateStr()) {
         results.innerHTML = items.map(({ type, item }, i) => {
           const p = N.displayPortion(app.data, type, item);
           return `<li class="tap" data-i="${i}">
+            <span class="item-emoji" aria-hidden="true">${type === 'recipe' ? '📖' : foodEmoji(item.name, type)}</span>
             <div class="grow"><div class="title">${esc(item.name)}</div>
               <div class="sub">per ${esc(p.label)}</div></div>
             <div class="value num">${fmt0(p.kcal)}<small>kcal</small></div></li>`;

@@ -61,15 +61,18 @@ function hero(day, target) {
   const allowance = target.kcal + (target.addExercise ? day.burned : 0);
   const left = N.remainingKcal(target, day);
   const over = left < 0;
-  const r = 52;
+  const r = 51;
   const c = 2 * Math.PI * r;
   const pct = Math.min(1, allowance ? day.eaten.kcal / allowance : 0);
+  // Today's calories on a dinner plate: the rim fills up as you eat.
   return `
-    <section class="card glass">
+    <section class="card glass placemat">
       <div class="hero">
-        <div class="ring ${over ? 'over' : ''}">
+        <div class="ring plate ${over ? 'over' : ''}">
           <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="plate-base" cx="60" cy="60" r="59"/>
             <circle class="track" cx="60" cy="60" r="${r}"/>
+            <circle class="plate-well" cx="60" cy="60" r="42"/>
             <circle class="value" cx="60" cy="60" r="${r}" stroke-dasharray="${c}" stroke-dashoffset="${c}" data-offset="${c * (1 - pct)}"/>
           </svg>
           <div class="ring-label"><strong class="num">${fmt0(Math.abs(left))}</strong><span>${over ? 'kcal over' : 'kcal left'}</span></div>

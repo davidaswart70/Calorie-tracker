@@ -158,3 +158,31 @@ export function seg(name, options, value) {
     .map(([v, label]) => `<button type="button" data-value="${esc(v)}" class="${v === value ? 'active' : ''}">${esc(label)}</button>`)
     .join('')}</div>`;
 }
+
+// ---------- Food emoji (for fridge magnets) ----------
+
+const EMOJI = [
+  [/yog/i, '🥣'], [/chicken|hoender/i, '🍗'], [/beef|steak|mince|burger|biltong|boerewors|droëwors/i, '🥩'],
+  [/\bham\b|bacon|pork|salami/i, '🥓'], [/\begg/i, '🥚'], [/milk/i, '🥛'], [/cheese|cottage|feta|mozzarella/i, '🧀'],
+  [/avo/i, '🥑'], [/lettuce|salad|spinach|\bgem\b|cabbage/i, '🥬'], [/tomato/i, '🍅'], [/cucumber/i, '🥒'],
+  [/tortilla|wrap|bread|toast|\broll|pita/i, '🫓'], [/mayo|sauce|mustard|ketchup|dressing|pesto/i, '🫙'],
+  [/syrup|honey/i, '🍯'], [/rice/i, '🍚'], [/pasta|noodle|spaghetti/i, '🍝'], [/potato|chips|fries/i, '🥔'],
+  [/apple/i, '🍎'], [/banana/i, '🍌'], [/berry|strawberr/i, '🍓'], [/orange|naartjie/i, '🍊'], [/grape/i, '🍇'],
+  [/fish|tuna|salmon|hake|snoek/i, '🐟'], [/oat|cereal|muesli|granola|pronutro/i, '🥣'], [/nut|peanut|almond/i, '🥜'],
+  [/choc/i, '🍫'], [/butter|margarine/i, '🧈'], [/onion/i, '🧅'], [/carrot/i, '🥕'], [/corn|mielie/i, '🌽'],
+  [/coffee|espresso|latte|cappuccino|americano/i, '☕'], [/tea|rooibos/i, '🫖'], [/sparkling|water|soda/i, '🫧'],
+  [/beer|lager|ale\b|cider/i, '🍺'], [/wine/i, '🍷'], [/juice/i, '🧃'], [/gin|vodka|whisk|rum|brandy|tequila/i, '🥃'],
+  [/cola|coke|fizzy/i, '🥤'], [/smoothie|shake/i, '🥤'],
+];
+
+export function foodEmoji(name, type = 'food') {
+  const hit = EMOJI.find(([re]) => re.test(name));
+  return hit ? hit[1] : type === 'drink' ? '🥤' : '🍽️';
+}
+
+/** Stable small number from a string (used to vary magnet colours and tilt). */
+export function hashOf(str) {
+  let h = 0;
+  for (const ch of String(str)) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+  return h;
+}

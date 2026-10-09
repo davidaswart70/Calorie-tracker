@@ -1,12 +1,12 @@
 // Our Fridge (foods) and Our Bar (drinks): list, add, edit, delete.
 import * as N from '../nutrition.js';
-import { esc, fmt0, fmt1, kcal, kj, macroLine, sourceBadge, openSheet, saveInBackground, seg, segValue, wireSegs, icon } from '../ui.js';
+import { esc, fmt0, fmt1, kcal, kj, macroLine, sourceBadge, openSheet, saveInBackground, seg, segValue, wireSegs, icon, foodEmoji, hashOf } from '../ui.js';
 import { ingredientEditor, previewTotals } from './ingredients.js';
 import { openLogSheet } from './log.js';
 
 const CONFIG = {
-  food: { table: 'foods', title: 'Our Fridge', eyebrow: 'Saved foods', noun: 'food', defaultUnit: 'g' },
-  drink: { table: 'drinks', title: 'Our Bar', eyebrow: 'Saved drinks', noun: 'drink', defaultUnit: 'ml' },
+  food: { table: 'foods', title: 'Our Fridge', eyebrow: 'What’s in the fridge', noun: 'food', defaultUnit: 'g' },
+  drink: { table: 'drinks', title: 'Our Bar', eyebrow: 'Today’s menu', noun: 'drink', defaultUnit: 'ml' },
 };
 
 export function render(el, app, type) {
@@ -19,8 +19,8 @@ export function render(el, app, type) {
       <button class="icon-btn" id="add" aria-label="Add ${cfg.noun}">${icon.plus}</button>
     </header>
     ${items.length > 5 ? `<label class="search" style="display:block;margin-bottom:14px">${icon.search}<input class="input glass" type="search" id="q" placeholder="Search ${cfg.title}"></label>` : ''}
-    <section class="card glass">
-      ${items.length ? '<ul class="list" id="list"></ul>' : `<div class="empty"><p>No ${cfg.noun}s saved yet.</p><button class="btn" id="add2">${icon.plus} Add a ${cfg.noun}</button></div>`}
+    <section class="${type === 'food' ? 'fridge-door' : 'chalkboard'}">
+      ${items.length ? `<div id="list" class="${type === 'food' ? 'magnets' : 'menu'}"></div>` : `<div class="empty"><p>No ${cfg.noun}s saved yet.</p><button class="btn" id="add2">${icon.plus} Add a ${cfg.noun}</button></div>`}
     </section>`;
 
   const listEl = el.querySelector('#list');
@@ -29,18 +29,27 @@ export function render(el, app, type) {
     const shown = items.filter((i) => i.name.toLowerCase().includes(term.toLowerCase()));
     listEl.innerHTML = shown.map((item) => {
       const p = N.displayPortion(app.data, type, item);
-      const composite = N.isComposite(app.data, type, item);
-      const ingCount = N.ingredientsOf(app.data, 'drink', item.id).length;
-      return `<li class="tap" data-id="${esc(item.id)}">
-        <div class="grow">
-          <div class="title">${esc(item.name)}</div>
-          <div class="sub num">${composite ? `${ingCount} ingredient${ingCount === 1 ? '' : 's'} · ` : ''}${macroLine(p)}</div>
-          <div class="sub" style="margin-top:3px">${sourceBadge(p.source)}</div>
-        </div>
-        <div class="value num">${fmt0(p.kcal)} kcal<small>per ${esc(p.label)}</small></div>
-      </li>`;
-    }).join('') || '<li class="empty" style="display:block">No matches.</li>';
-    listEl.querySelectorAll('li[data-id]').forEach((li) => {
+      if (type === 'food') {
+        // A fridge magnet: colour and tilt vary per item but stay the same between visits.
+        const h = hashOf(item.name);
+        return `<button class="magnet m${h % 6}" style="--tilt:${(h % 7) - 3}deg" data-id="${esc(item.id)}">
+          <span class="magnet-emoji">${foodEmoji(item.name, type)}</span>
+          <b>${esc(item.name)}</b>
+          <span class="magnet-kcal num">${fmt0(p.kcal)} <small>kcal / ${esc(p.label)}</small></span>
+          <span class="magnet-tag ${p.source === 'label' ? 'label' : 'est'}">${p.source === 'label' ? 'Label' : 'Est.'}</span>
+        </button>`;
+      }
+      // A line on the chalkboard menu.
+      const ings = N.ingredientsOf(app.data, 'drink', item.id)
+        .map((i) => N.findItem(app.data, i.itemType, i.itemId)?.name).filter(Boolean);
+      const sub = ings.length ? ings.join(' · ') : item.notes || `per ${p.label}`;
+      return `<div class="menu-item" data-id="${esc(item.id)}" role="button" tabindex="0">
+        <div class="menu-line"><span class="menu-name">${foodEmoji(item.name, type)} ${esc(item.name)}</span><span class="menu-dots"></span><span class="menu-kcal num">${fmt0(p.kcal)}</span></div>
+        <div class="menu-sub">${esc(sub)}</div>
+        <div class="menu-sub num">${macroLine(p)} · ${p.source === 'label' ? 'label' : 'estimate'}</div>
+      </div>`;
+    }).join('') || '<div class="empty">No matches.</div>';
+    listEl.querySelectorAll('[data-id]').forEach((li) => {
       li.onclick = () => openItemForm(app, type, items.find((i) => i.id === li.dataset.id));
     });
   };
