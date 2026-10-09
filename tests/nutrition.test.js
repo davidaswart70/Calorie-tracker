@@ -36,6 +36,13 @@ test('simple food by grams and by serving', () => {
   assert.equal(N.nutritionFor(data, 'food', tortilla, 1, 'g').source, 'label');
 });
 
+test('items stored per serving', () => {
+  const espresso = { id: 'esp', name: 'Espresso', unit: 'serving', kcal: 2, protein: 0.1, source: 'estimated' };
+  assert.deepEqual(N.unitsFor(data, 'drink', espresso), ['serving']);
+  assert.equal(N.nutritionFor(data, 'drink', espresso, 3, 'serving').kcal, 6);
+  assert.equal(N.displayPortion(data, 'drink', espresso).label, '1 serving');
+});
+
 test('composite drink is calculated from its ingredients', () => {
   const ic = data.drinks[1];
   const one = N.nutritionFor(data, 'drink', ic, 1, 'serving');

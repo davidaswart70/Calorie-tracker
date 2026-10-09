@@ -43,7 +43,7 @@ export function scale(t, factor) {
 // ---------- Saved items (foods, drinks, recipes) ----------
 //
 // Foods and simple drinks store nutrition per 100 g or per 100 ml (item.unit),
-// with an optional servingSize in that unit.
+// with an optional servingSize in that unit — or, when item.unit is 'serving', per one serving.
 // Recipes, and drinks that have ingredients, are calculated from their ingredients.
 // Ingredient rows: { parentType: 'recipe'|'drink', parentId, itemType: 'food'|'drink', itemId, quantity, unit }
 
@@ -63,7 +63,7 @@ export function isComposite(data, type, item) {
 
 // Units an item can be logged in.
 export function unitsFor(data, type, item) {
-  if (isComposite(data, type, item)) return ['serving'];
+  if (isComposite(data, type, item) || item.unit === 'serving') return ['serving'];
   const units = [item.unit || 'g'];
   if (num(item.servingSize) > 0) units.push('serving');
   return units;
@@ -104,13 +104,16 @@ export function nutritionFor(data, type, item, quantity, unit, depth = 0) {
     return { ...scale(drink, factor), source: drink.source, missing: drink.missing };
   }
 
+  if (item.unit === 'serving') {
+    return { ...scale(item, unit === 'serving' ? qty : 0), source: item.source === 'label' ? 'label' : 'estimated', missing: [] };
+  }
   const amount = unit === 'serving' ? qty * num(item.servingSize) : qty;
   return { ...scale(item, amount / 100), source: item.source === 'label' ? 'label' : 'estimated', missing: [] };
 }
 
 // Nutrition for one serving (or 100 g/ml when no serving size), used for list display.
 export function displayPortion(data, type, item) {
-  if (isComposite(data, type, item)) {
+  if (isComposite(data, type, item) || item.unit === 'serving') {
     return { label: '1 serving', ...nutritionFor(data, type, item, 1, 'serving') };
   }
   return { label: `100 ${item.unit || 'g'}`, ...nutritionFor(data, type, item, 100, item.unit || 'g') };

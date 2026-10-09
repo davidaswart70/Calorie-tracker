@@ -91,5 +91,7 @@ export function loadBackend({ passcode = 'secret', codePath = new URL('../../app
     post: (body) => JSON.parse(context.doPost({ postData: { contents: JSON.stringify(body) } }).content),
     get: () => JSON.parse(context.doGet().content),
     setup: () => context.setup(),
+    // Run any top-level function from the script by name (like pressing Run in the editor).
+    run: (name, ...args) => context[name](...args),
   };
 }
