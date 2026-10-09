@@ -1,7 +1,9 @@
 // Home: today's calories, remaining allowance, macros and entries.
 import * as N from '../nutrition.js';
 import { esc, fmt0, kj, icon, prettyDate } from '../ui.js';
-import { openLogSheet, openExerciseSheet, logRow, wireDeletes } from './log.js';
+import { openLogSheet, openExerciseSheet, groupedLogRows, wireDeletes } from './log.js';
+import { fitsCard, wireFitsCard, fastingCard, wireFastingCard } from './today-cards.js';
+import { wrappedBanner, wireWrappedBanner } from './wrapped-view.js';
 import { openMealSheet } from './meal.js';
 import { streakStrip, wireStreakStrip } from './awards-view.js';
 
@@ -9,7 +11,7 @@ export function render(el, app) {
   const today = N.dateStr();
   const day = N.dayTotals(app.data.logs, today);
   const target = N.dailyTarget(app.data.settings);
-  const entries = [...day.entries].sort((a, b) => (a.time < b.time ? 1 : -1));
+  const entries = day.entries;
 
   el.innerHTML = `
     <header class="page-head">
@@ -23,6 +25,9 @@ export function render(el, app) {
       <button class="btn" id="log-meal">${icon.plus} Meal</button>
       <button class="btn secondary wide" id="log-ex">${icon.flame} Exercise</button>
     </div>
+    ${wrappedBanner(app)}
+    ${fitsCard(app, day, target)}
+    ${fastingCard(app)}
     <section class="card glass">
       <h2>Macros</h2>
       ${macroBar('Protein', 'protein', day.eaten.protein, target.macros?.protein)}
@@ -31,7 +36,7 @@ export function render(el, app) {
     </section>
     <section class="card glass">
       <h2>Today’s entries</h2>
-      ${entries.length ? `<ul class="list">${entries.map(logRow).join('')}</ul>`
+      ${entries.length ? groupedLogRows(entries)
         : '<div class="empty"><p>Nothing logged yet today.</p></div>'}
     </section>`;
 
@@ -40,6 +45,9 @@ export function render(el, app) {
   el.querySelector('#log-ex').onclick = () => openExerciseSheet(app);
   wireDeletes(el, app);
   wireStreakStrip(el, app);
+  wireFitsCard(el, app, day, target);
+  wireFastingCard(el, app);
+  wireWrappedBanner(el, app);
 
   // Animate the ring from empty.
   const ring = el.querySelector('.ring .value');

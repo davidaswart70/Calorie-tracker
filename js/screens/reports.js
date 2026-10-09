@@ -2,7 +2,8 @@
 import * as N from '../nutrition.js';
 import { esc, fmt0, fmt1, kcal, kj, prettyDate, icon, seg, wireSegs, saveInBackground } from '../ui.js';
 import { ring, donut, bars, line, legend, animate } from '../charts.js';
-import { logRow, wireDeletes, openLogSheet } from './log.js';
+import { groupedLogRows, wireDeletes, openLogSheet } from './log.js';
+import { playWrapped } from './wrapped-view.js';
 import { openMealSheet } from './meal.js';
 import { awardsTab } from './awards-view.js';
 import { maintenanceCard, wireMaintenanceCard } from './maintenance.js';
@@ -108,7 +109,7 @@ function dayTab(el, app, st) {
     <section class="card glass">
       <div class="card-head"><h2>Entries</h2>
         <div class="row"><button class="btn secondary small" id="add">${icon.plus} Item</button><button class="btn secondary small" id="add-meal">${icon.plus} Meal</button></div></div>
-      ${entries.length ? `<ul class="list">${entries.map(logRow).join('')}</ul>` : '<div class="empty"><p>Nothing logged on this day.</p></div>'}
+      ${entries.length ? groupedLogRows(entries) : '<div class="empty"><p>Nothing logged on this day.</p></div>'}
     </section>`;
 
   if (timeline.length) {
@@ -152,6 +153,7 @@ function periodTab(el, app, st, length) {
   el.innerHTML = `
     <section class="card glass">
       ${dateNav(range, st.end < today)}
+      ${logged.length && length === 7 ? `<button class="wrapped-banner small-banner" id="play-wrapped"><span class="wrapped-gift">🎁</span><span class="grow"><b>Play Wrapped</b><small>This week as a story</small></span><span class="wrapped-play">▶</span></button>` : ''}
       ${logged.length ? `<div class="tiles">
         <div class="tile"><span>Average a day</span><b class="num">${fmt0(rep.average.kcal)}</b><small class="num">kcal${target.kcal ? ` · ${signed(rep.average.kcal - target.kcal, '')} vs target` : ''}</small></div>
         <div class="tile"><span>Days on target</span><b class="num">${onTarget === null ? '—' : `${onTarget}/${logged.length}`}</b><small>${onTarget === null ? 'No target set' : 'at or under target'}</small></div>
@@ -185,6 +187,20 @@ function periodTab(el, app, st, length) {
     </section>
 
     <section class="card glass">
+      <h2>When you eat</h2>
+      ${(() => {
+        const split = N.mealTimeSplit(app.data.logs, rep.start, rep.end);
+        const late = split.find((r) => r.id === 'late');
+        const topTime = [...split].sort((a, b) => b.share - a.share)[0];
+        return `<ul class="list">${split.map((r) => `<li style="display:block">
+          <div class="row"><div class="grow"><div class="title">${r.emoji} ${esc(r.label)}</div><div class="sub">${r.count} entr${r.count === 1 ? 'y' : 'ies'}</div></div>
+          <div class="value num">${kcal(r.kcal / Math.max(logged.length, 1))}<small>a day · ${fmt0(r.share * 100)}%</small></div></div>
+          <div class="share-bar anim"><i style="--w:${(r.share * 100).toFixed(1)}%"></i></div></li>`).join('')}</ul>
+          <p class="tiny" style="margin:10px 0 0">${late.share >= 0.15 ? `Late-night snacks are ${fmt0(late.share * 100)}% of your calories, an easy place to cut back. 🌙` : `${esc(topTime.label)} is your biggest meal time (${fmt0(topTime.share * 100)}%).`}</p>`;
+      })()}
+    </section>
+
+    <section class="card glass">
       <h2>Where your calories came from</h2>
       <ul class="list">${top.map((t) => `<li style="display:block">
           <div class="row"><div class="grow"><div class="title">${esc(t.name)}</div><div class="sub">${t.count} time${t.count === 1 ? '' : 's'}</div></div>
@@ -204,6 +220,7 @@ function periodTab(el, app, st, length) {
       ${length > 7 ? '</details>' : ''}
     </section>` : ''}`;
 
+  el.querySelector('#play-wrapped')?.addEventListener('click', () => playWrapped(app, rep.start));
   el.querySelectorAll('[data-nav]').forEach((b) => (b.onclick = () => {
     const next = N.addDays(st.end, length * Number(b.dataset.nav));
     st.end = next > today ? today : next;

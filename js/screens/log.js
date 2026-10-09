@@ -219,3 +219,16 @@ export function wireDeletes(container, app) {
     };
   });
 }
+
+/** Entries grouped under meal-time headings (Breakfast, Lunch, …), each with its calorie subtotal. */
+export function groupedLogRows(entries) {
+  const sorted = [...entries].sort((a, b) => (String(a.time) < String(b.time) ? -1 : 1));
+  const groups = [];
+  for (const m of [...N.MEAL_TIMES, { id: 'exercise', label: 'Exercise', emoji: '🔥' }]) {
+    const rows = sorted.filter((l) => (m.id === 'exercise' ? l.type === 'exercise' : l.type !== 'exercise' && N.mealTime(l.time).id === m.id));
+    if (!rows.length) continue;
+    const total = rows.reduce((s, l) => s + N.num(l.kcal), 0);
+    groups.push(`<li class="group-head"><span>${m.emoji} ${esc(m.label)}</span><span class="num">${m.id === 'exercise' ? '−' : ''}${fmt0(total)} kcal</span></li>${rows.map(logRow).join('')}`);
+  }
+  return `<ul class="list grouped">${groups.join('')}</ul>`;
+}

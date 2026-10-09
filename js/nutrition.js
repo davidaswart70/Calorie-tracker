@@ -457,3 +457,119 @@ export function streaks(logs, settings, today = dateStr()) {
   }
   return result;
 }
+
+// ---------- Meal times ----------
+
+export const MEAL_TIMES = [
+  { id: 'breakfast', label: 'Breakfast', emoji: '🌅', from: '04:00' },
+  { id: 'lunch', label: 'Lunch', emoji: '🥪', from: '11:00' },
+  { id: 'afternoon', label: 'Afternoon snack', emoji: '🍎', from: '15:00' },
+  { id: 'dinner', label: 'Dinner', emoji: '🍽️', from: '17:30' },
+  { id: 'late', label: 'Late-night snack', emoji: '🌙', from: '21:30' },
+];
+
+const hhmm = (t) => { const [h, m] = String(t || '12:00').split(':'); return `${String(Number(h) || 0).padStart(2, '0')}:${String(Number(m) || 0).padStart(2, '0')}`; };
+
+export function mealTime(time) {
+  const t = hhmm(time);
+  if (t < MEAL_TIMES[0].from) return MEAL_TIMES[MEAL_TIMES.length - 1]; // after midnight counts as late night
+  return [...MEAL_TIMES].reverse().find((m) => t >= m.from);
+}
+
+/** Calories per meal time between two dates (inclusive), with each one's share. */
+export function mealTimeSplit(logs, from, to) {
+  const rows = MEAL_TIMES.map((m) => ({ ...m, kcal: 0, count: 0 }));
+  let total = 0;
+  for (const l of logs) {
+    if (isExercise(l) || l.date < from || l.date > to) continue;
+    const row = rows.find((r) => r.id === mealTime(l.time).id);
+    row.kcal += num(l.kcal);
+    row.count += 1;
+    total += num(l.kcal);
+  }
+  return rows.map((r) => ({ ...r, share: total ? r.kcal / total : 0 }));
+}
+
+// ---------- What can I still eat? ----------
+
+/** A sensible single portion of a saved item: 1 serving if it has one, otherwise 100 g/ml. */
+export function portionOf(data, type, item) {
+  if (isComposite(data, type, item) || item.unit === 'serving' || num(item.servingSize) > 0) return { qty: 1, unit: 'serving' };
+  return { qty: 100, unit: item.unit || 'g' };
+}
+
+/**
+ * Saved items whose usual portion fits in the calories left, best protein-per-calorie first
+ * (or the most filling first when protein is already covered). Also lists near-zero-calorie options.
+ */
+export function suggestions(data, kcalLeft, proteinLeft, limit = 4) {
+  const fits = [];
+  const free = [];
+  for (const type of ['food', 'drink', 'recipe']) {
+    for (const item of data[TABLE[type]] || []) {
+      const { qty, unit } = portionOf(data, type, item);
+      const n = nutritionFor(data, type, item, qty, unit);
+      if (n.missing.length) continue;
+      if (n.kcal < 5) { free.push({ type, item, qty, unit, n }); continue; }
+      if (n.kcal < 20 || n.kcal > kcalLeft) continue;
+      const score = proteinLeft > 5 ? n.protein / n.kcal : n.kcal / Math.max(kcalLeft, 1);
+      fits.push({ type, item, qty, unit, n, score });
+    }
+  }
+  fits.sort((a, b) => b.score - a.score || b.n.kcal - a.n.kcal);
+  return { fits: fits.slice(0, limit), free: free.slice(0, 3) };
+}
+
+// ---------- Fasting ----------
+
+/** Entries above this many kcal end a fast (black coffee, rooibos, sparkling water don't). */
+export const FAST_BREAK_KCAL = 10;
+
+const minuteOf = (date, time) => { const [h, m] = hhmm(time).split(':').map(Number); return dayNum(date) * 1440 + h * 60 + m; };
+
+/**
+ * Time since the last fast-breaking entry, progress toward the goal (hours, 0 = no goal),
+ * and a streak of days whose longest completed fast reached the goal.
+ */
+export function fastingState(logs, goalHours, now = new Date()) {
+  const nowMin = dayNum(dateStr(now)) * 1440 + now.getHours() * 60 + now.getMinutes();
+  const breaks = logs
+    .filter((l) => !isExercise(l) && num(l.kcal) > FAST_BREAK_KCAL && l.date && l.time)
+    .map((l) => minuteOf(l.date, l.time))
+    .filter((t) => t <= nowMin)
+    .sort((a, b) => a - b);
+  const last = breaks.length ? breaks[breaks.length - 1] : null;
+  const sinceMin = last === null ? null : nowMin - last;
+  const goalMin = num(goalHours) * 60;
+
+  // Longest fast that ended on each day (gap before an entry, credited to the entry's day).
+  const best = new Map();
+  for (let i = 1; i < breaks.length; i++) {
+    const day = Math.floor(breaks[i] / 1440);
+    best.set(day, Math.max(best.get(day) || 0, breaks[i] - breaks[i - 1]));
+  }
+  let current = 0, bestRun = 0, run = 0;
+  if (goalMin) {
+    const days = [...best.keys()].sort((a, b) => a - b);
+    let prev = null;
+    for (const d of days) {
+      const ok = best.get(d) >= goalMin;
+      run = ok ? (prev !== null && d === prev + 1 ? run + 1 : 1) : 0;
+      prev = ok ? d : null;
+      bestRun = Math.max(bestRun, run);
+    }
+    const today = Math.floor(nowMin / 1440);
+    // Today counts if a goal-length fast already ended today, or the ongoing fast has reached the goal.
+    let d = (best.get(today) || 0) >= goalMin || (sinceMin !== null && sinceMin >= goalMin) ? today : today - 1;
+    if (d === today) { current = 1; d -= 1; }
+    while ((best.get(d) || 0) >= goalMin) { current += 1; d -= 1; }
+    bestRun = Math.max(bestRun, current);
+  }
+  return {
+    sinceMin, lastAt: last, goalMin,
+    progress: goalMin && sinceMin !== null ? Math.min(1, sinceMin / goalMin) : 0,
+    reached: Boolean(goalMin && sinceMin !== null && sinceMin >= goalMin),
+    endsAtMin: goalMin && last !== null ? last + goalMin : null,
+    streak: { current, best: bestRun },
+  };
+}

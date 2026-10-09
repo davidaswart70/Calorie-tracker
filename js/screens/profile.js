@@ -52,6 +52,9 @@ export function render(el, app) {
       <label class="toggle"><span><b>Add exercise to my allowance</b><br>
         <span class="small muted">Logged exercise calories are added to what you can eat that day. If you turn this on, choose an activity level that ignores your workouts (usually Sedentary or Lightly active) so they aren’t counted twice.</span></span>
         <span class="switch"><input type="checkbox" id="addex" ${s.addExercise === 'yes' ? 'checked' : ''}><span></span></span></label>
+      <div><div class="small muted" style="font-weight:600;margin:0 0 6px 4px">Fasting goal (hours between your last meal and the next)</div>
+        ${seg('fast', [['', 'Off'], ['12', '12 h'], ['14', '14 h'], ['16', '16 h'], ['18', '18 h'], ['20', '20 h']], String(s.fastingHours || ''))}
+        <p class="tiny" style="margin:6px 0 0">Drinks under ${N.FAST_BREAK_KCAL} kcal (black coffee, rooibos, sparkling water) don’t break a fast.</p></div>
       <button class="btn block" id="save">Save profile</button>
     </section>
 
@@ -157,6 +160,7 @@ export function render(el, app) {
       goal,
       calorieTarget: $('override').value.trim() ? N.num($('override').value) : '',
       addExercise: $('addex').checked ? 'yes' : 'no',
+      fastingHours: segValue(el, 'fast'),
     };
     const latest = N.latestWeight(app.data.weights);
     const newWeight = p.weightKg > 0 && (!latest || N.num(latest.weightKg) !== p.weightKg);

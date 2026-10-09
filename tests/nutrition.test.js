@@ -145,6 +145,48 @@ test('streaks: current (alive if today not logged yet) and best', () => {
   assert.deepEqual(s.protein, { current: 0, best: 0 });
 });
 
+test('meal times and split', () => {
+  assert.equal(N.mealTime('07:30').id, 'breakfast');
+  assert.equal(N.mealTime('12:00').id, 'lunch');
+  assert.equal(N.mealTime('16:00').id, 'afternoon');
+  assert.equal(N.mealTime('19:15').id, 'dinner');
+  assert.equal(N.mealTime('22:40').id, 'late');
+  assert.equal(N.mealTime('01:10').id, 'late');
+  assert.equal(N.mealTime('9:05').id, 'breakfast');
+  const split = N.mealTimeSplit([
+    { date: '2026-10-09', time: '08:00', kcal: 100 }, { date: '2026-10-09', time: '23:00', kcal: 300 },
+    { date: '2026-10-09', time: '10:00', type: 'exercise', kcal: 500 }, { date: '2026-10-01', time: '08:00', kcal: 999 },
+  ], '2026-10-03', '2026-10-09');
+  assert.equal(split.find((r) => r.id === 'late').share, 0.75);
+  assert.equal(split.find((r) => r.id === 'breakfast').count, 1);
+});
+
+test('suggestions fit the calories left, best protein per kcal first', () => {
+  const s = N.suggestions(data, 400, 60);
+  const names = s.fits.map((f) => f.item.name);
+  assert.ok(names.includes('Chicken wrap'));          // recipe serving 345 kcal fits
+  assert.ok(!names.includes('Tortilla') || s.fits.find((f) => f.item.name === 'Tortilla').n.kcal <= 400);
+  assert.equal(s.fits[0].item.name, 'Chicken breast'); // 100 g: 165 kcal, 31 g protein → best ratio
+  assert.ok(N.suggestions(data, 100, 0).fits.every((f) => f.n.kcal <= 100));
+});
+
+test('fasting timer and streak', () => {
+  const at = (date, time, kcal = 400) => ({ date, time, type: 'food', name: 'x', kcal });
+  const logs = [
+    at('2026-10-06', '19:00'), at('2026-10-07', '12:00'),             // 17 h fast ending 7 Oct
+    at('2026-10-07', '19:00'), at('2026-10-08', '11:30'),             // 16.5 h ending 8 Oct
+    at('2026-10-08', '20:00'), at('2026-10-09', '07:00', 2),          // black coffee doesn't break it
+  ];
+  const now = new Date(2026, 9, 9, 10, 30);
+  const f = N.fastingState(logs, 16, now);
+  assert.equal(f.sinceMin, 14 * 60 + 30);
+  assert.equal(f.reached, false);
+  close(f.progress, 14.5 / 16);
+  assert.deepEqual(f.streak, { current: 2, best: 2 });
+  assert.equal(N.fastingState(logs, 16, new Date(2026, 9, 9, 12, 30)).streak.current, 3);
+  assert.equal(N.fastingState([], 16, now).sinceMin, null);
+});
+
 test('exercise uses net MET', () => {
   close(N.exerciseKcal(7, 85, 60), 510);
   assert.equal(N.exerciseKcal(0.5, 85, 60), 0);
