@@ -48,6 +48,7 @@ export function awardsTab(el, app) {
         ${tile('🔥', 'Logging', s.logging)}
         ${tile('🎯', 'On target', s.onTarget)}
         ${tile('💪', 'Protein goal', s.protein)}
+        ${N.num(app.data.settings.fastingHours) ? tile('⏳', 'Fasting goal', N.fastingState(app.data.logs, app.data.settings.fastingHours).streak) : ''}
         <div class="tile"><span>🏆 Awards</span><b class="num">${earned.length}/${all.length}</b><small>unlocked</small></div>
       </div>
     </section>

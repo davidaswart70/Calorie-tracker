@@ -100,6 +100,11 @@ const BADGES = [
     [7, '🦾', 'Protein machine', 'Hit your protein goal 7 days in a row'],
   ]),
 
+  ...tiers({ id: 'fast', group: 'Streaks', value: (c) => c.fasting.best, fmt: (v) => `${v} days` }, [
+    [3, '⏳', 'Fast learner', 'Reach your fasting goal 3 days in a row'],
+    [7, '🕰️', 'Time lord', 'Reach your fasting goal 7 days in a row'],
+  ]),
+
   // Weight
   ...tiers({ id: 'lost', group: 'Weight', value: (c) => c.lostKg, fmt: (v) => `${N.roundTo(v, 0.1).toFixed(1)} kg` }, [
     [1, '🪶', 'Lighter already', 'Lose your first kilogram'],
@@ -182,6 +187,7 @@ export function evaluateAwards(data, today = N.dateStr()) {
 
   const ctx = {
     streaks: N.streaks(logs, data.settings || {}, today),
+    fasting: N.num((data.settings || {}).fastingHours) ? N.fastingState(logs, (data.settings || {}).fastingHours).streak : { best: 0 },
     lostKg: weights.length > 1 ? Math.max(0, N.num(weights[0].weightKg) - Math.min(...weights.map((w) => N.num(w.weightKg)))) : 0,
     weighIns: weights.length,
     entries: logs.length,
