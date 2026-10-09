@@ -1,7 +1,7 @@
 // Home: today's calories, remaining allowance, macros and entries.
 import * as N from '../nutrition.js';
 import { esc, fmt0, kj, icon, prettyDate } from '../ui.js';
-import { openLogSheet, openExerciseSheet, groupedLogRows, wireDeletes } from './log.js';
+import { openLogSheet, openExerciseSheet, groupedLogRows, wireEntries } from './log.js';
 import { fitsCard, wireFitsCard, fastingCard, wireFastingCard } from './today-cards.js';
 import { wrappedBanner, wireWrappedBanner } from './wrapped-view.js';
 import { openMealSheet } from './meal.js';
@@ -43,7 +43,7 @@ export function render(el, app) {
   el.querySelector('#log-food').onclick = () => openLogSheet(app);
   el.querySelector('#log-meal').onclick = () => openMealSheet(app);
   el.querySelector('#log-ex').onclick = () => openExerciseSheet(app);
-  wireDeletes(el, app);
+  wireEntries(el, app);
   wireStreakStrip(el, app);
   wireFitsCard(el, app, day, target);
   wireFastingCard(el, app);
