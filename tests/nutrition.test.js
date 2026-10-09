@@ -97,6 +97,27 @@ test('macro targets and daily target override', () => {
   assert.equal(N.dailyTarget({ ...settings, calorieTarget: '1900' }).kcal, 1900);
 });
 
+test('period report, macro energy split, running total and weight rate', () => {
+  const logs = [
+    { date: '2026-10-09', time: '13:00', type: 'food', name: 'B', kcal: 300, protein: 20, carbs: 30, fat: 10 },
+    { date: '2026-10-09', time: '08:30', type: 'food', name: 'A', kcal: 200 },
+    { date: '2026-10-09', time: '10:00', type: 'exercise', name: 'Walk', kcal: 100 },
+  ];
+  const month = N.periodReport(logs, '2026-10-09', 30);
+  assert.equal(month.days.length, 30);
+  assert.equal(month.start, '2026-09-10');
+  assert.equal(month.daysLogged, 1);
+
+  const e = N.macroEnergy({ protein: 20, carbs: 30, fat: 10 });
+  assert.deepEqual([e.protein, e.carbs, e.fat, e.total], [80, 120, 90, 290]);
+  close(e.shares.fat, 90 / 290);
+
+  assert.deepEqual(N.cumulativeByTime(logs).map((p) => [p.minutes, p.kcal]), [[510, 200], [780, 500]]);
+
+  close(N.weightRate([{ date: '2026-10-01', weightKg: 86 }, { date: '2026-10-15', weightKg: 85 }]), -0.5);
+  assert.equal(N.weightRate([{ date: '2026-10-01', weightKg: 86 }]), null);
+});
+
 test('exercise uses net MET', () => {
   close(N.exerciseKcal(7, 85, 60), 510);
   assert.equal(N.exerciseKcal(0.5, 85, 60), 0);
