@@ -1,0 +1,13 @@
+# Secrets and local configuration — never commit these
+.env
+.env.*
+!.env.example
+*.local.*
+.clasprc.json
+credentials*.json
+service-account*.json
+
+# Dependencies and tooling
+node_modules/
+.DS_Store
+*.log
