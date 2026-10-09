@@ -5,6 +5,8 @@ const README = 'https://github.com/davidaswart70/Calorie-tracker#connecting-goog
 
 export function render(el, app) {
   const conn = app.store.getConnection();
+  // A setup link like …/#url=<web app URL> fills in the URL (the passcode is always typed).
+  const linkUrl = location.hash.startsWith('#url=') ? decodeURIComponent(location.hash.slice(5)) : '';
   el.innerHTML = `
     <header class="page-head"><div><p class="eyebrow">Calorie Tracker</p><h1>Connect Google Sheets</h1></div></header>
     <section class="card glass stack">
@@ -12,9 +14,9 @@ export function render(el, app) {
         Enter the web app URL and passcode from the setup steps. They are saved on this device only.</p>
       <label class="field"><span>Web app URL</span>
         <input class="input" id="url" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false"
-          placeholder="https://script.google.com/macros/s/…/exec" value="${esc(conn?.url || '')}"></label>
+          placeholder="https://script.google.com/macros/s/…/exec" value="${esc(linkUrl || conn?.url || '')}"></label>
       <label class="field"><span>Passcode</span>
-        <input class="input" id="pass" type="password" autocomplete="current-password" value=""></label>
+        <input class="input" id="pass" type="password" autocomplete="current-password" value="" ${linkUrl ? 'autofocus' : ''}></label>
       <button class="btn block" id="connect">Connect</button>
       <p class="tiny" style="margin:0">Need the setup steps? <a href="${README}" target="_blank" rel="noopener">See “Connecting Google Sheets” in the README</a>.</p>
     </section>`;
