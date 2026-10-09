@@ -168,10 +168,9 @@ function openItemForm(app, type, item = null, presetName = '') {
       const ings = editor?.get() || [];
       if (composite && !ings.length) return alert('Add at least one ingredient, or switch off “Made from ingredients”.');
 
-      const res = await saving(e.currentTarget, async () => {
-        const saved = isNew ? await app.store.add(cfg.table, vals) : await app.store.update(cfg.table, item.id, vals);
-        if (type === 'drink') await app.store.setIngredients('drink', saved.id, composite ? ings : []);
-        return saved;
+      const res = await saving(e.currentTarget, () => {
+        if (type === 'drink') return app.store.saveWithIngredients(cfg.table, item?.id || null, vals, 'drink', composite ? ings : []);
+        return isNew ? app.store.add(cfg.table, vals) : app.store.update(cfg.table, item.id, vals);
       }, `Saved ${vals.name}`);
       if (res.ok) { close(); app.refresh(); }
     };

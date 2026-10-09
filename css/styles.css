@@ -220,6 +220,19 @@ main {
 .tab-icon svg { width: 24px; height: 24px; transition: transform 0.3s var(--ease); }
 .tabbar a:active .tab-icon svg { transform: scale(0.85); }
 
+body.no-tabbar .tabbar { display: none; }
+
+.loading { text-align: center; padding: 28px 18px; }
+.loading p { margin: 0 0 10px; }
+.spinner {
+  width: 30px; height: 30px; margin: 0 auto 14px;
+  border-radius: 50%; border: 3px solid var(--track); border-top-color: var(--green);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.card a { color: var(--green-strong); }
+
 /* ---------- Home hero ---------- */
 
 .hero { display: flex; align-items: center; gap: 18px; }
@@ -408,7 +421,7 @@ textarea.input { min-height: 70px; resize: vertical; }
 }
 .toast.show { transform: translate(-50%, 0); opacity: 1; }
 .toast.ok::before { content: "✓  "; color: var(--green); }
-.toast.error { color: var(--red); }
+.toast.error { color: var(--red); white-space: normal; border-radius: 20px; text-align: center; width: max-content; }
 
 /* ---------- Charts ---------- */
 

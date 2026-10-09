@@ -2,6 +2,7 @@
 
 A personal calorie tracker for iPhone with a Liquid Glass-inspired design.
 Plain HTML, CSS and JavaScript: no framework, no build step, no server.
+Data is stored in your own Google Sheet.
 
 ## Sections
 
@@ -61,18 +62,65 @@ Requires Node 18+. No dependencies to install.
 2. On GitHub: **Settings → Pages → Build and deployment → Deploy from a branch → `main` / `(root)`**.
 3. Open the Pages URL in Safari on your iPhone, tap **Share → Add to Home Screen**.
 
-## Where data is stored (for now)
+## Where data is stored: Google Sheets
 
-Currently all data is saved in **this browser's local storage** on the device you use.
-It survives closing the app, but it is not shared between devices, and is lost if you clear
-Safari's website data. Safari can also clear storage for websites that haven't been opened in a
-while, so add the app to your Home Screen.
+All data lives in **your own Google Sheet**, so it persists and is the same on every device.
+A small Google Apps Script ([`apps-script/Code.gs`](apps-script/Code.gs)) attached to the sheet
+reads and writes it. The app talks only to that script.
 
-The next step is moving storage to **Google Sheets**. All reads and writes go through
-[`js/store.js`](js/store.js), whose tables already match the planned sheet tabs
-(Foods, Drinks, Recipes, Recipe Ingredients, Daily Logs, Weight Logs, Settings), so only that file needs to change.
+- **No Google credentials or API keys** are in this repository or the app. The script runs as your Google account.
+- The script is protected by a **passcode** you choose. It is stored in the script's *Script properties*
+  (not in code) and typed into the app once per device.
+- Every save is **read back from the sheet** before the app says it's saved. If anything fails,
+  the app shows the error and does not pretend it worked.
+- Past log entries keep the values they were logged with.
 
-No secrets are used yet, so there is no `.env` file. `.gitignore` already excludes `.env` and credential files.
+### Spreadsheet tabs
+
+The script creates these tabs automatically (row 1 = column names; columns are matched by name, so you can reorder them):
+
+| Tab | Columns |
+|---|---|
+| Foods / Drinks | id, name, unit (g/ml), servingSize, kcal, protein, carbs, fat (all per 100 g/ml), source (label/estimated), notes, updatedAt |
+| Recipes | id, name, servings, notes, updatedAt |
+| Recipe Ingredients | id, parentType (recipe/drink), parentId, itemType (food/drink), itemId, quantity, unit (g/ml/serving) |
+| Daily Logs | id, date, time, type (food/drink/recipe/exercise), itemId, name, quantity, unit, kcal, protein, carbs, fat, source, createdAt |
+| Weight Logs | id, date, weightKg, createdAt |
+| Settings | key, value (your profile, goal and options) |
+
+You can view and edit the sheet directly. Keep the `id` column intact.
+
+## Connecting Google Sheets
+
+You only do this once.
+
+1. **Create the spreadsheet.** Go to <https://sheets.new> (signed in to Google) and give it a name, e.g. *Calorie Tracker*.
+2. **Add the script.** In the spreadsheet: **Extensions → Apps Script**. Delete everything in `Code.gs`,
+   paste the full contents of [`apps-script/Code.gs`](apps-script/Code.gs), and click **Save** (💾).
+3. **Choose a passcode.** In the Apps Script editor: **Project Settings** (⚙ on the left) → scroll to
+   **Script properties** → **Add script property**. Property: `PASSCODE`, Value: a passcode of your choice → **Save script properties**.
+4. **Create the tabs.** Go back to the **Editor** (`< >` on the left), choose `setup` in the function
+   drop-down at the top, and click **Run**. Google asks for permission the first time:
+   **Review permissions** → choose your account → **Advanced** → **Go to (project name) (unsafe)** → **Allow**.
+   (It says "unsafe" because it's your own unverified script; it only accesses this spreadsheet.)
+   The seven tabs now appear in the spreadsheet.
+5. **Publish it as a web app.** Click **Deploy → New deployment** → click ⚙ next to *Select type* → **Web app**.
+   - Execute as: **Me**
+   - Who has access: **Anyone**
+
+   Click **Deploy** and copy the **Web app URL** (ends in `/exec`).
+   ("Anyone" means anyone with the URL *and* the passcode. Without the passcode every request is refused.)
+6. **Connect the app.** Open the app, paste the Web app URL, enter your passcode, and tap **Connect**.
+   Repeat this step on each device you use.
+
+### Updating the script later
+
+If `apps-script/Code.gs` changes: paste the new version into the editor, save, then
+**Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy**. The URL stays the same.
+
+To change the passcode: edit the `PASSCODE` script property, then in the app go to Profile → **Change connection**.
+
+No `.env` file is needed: the only secret (the passcode) lives in Script properties, and `.gitignore` excludes `.env` and credential files anyway.
 
 ## Project structure
 
@@ -81,7 +129,7 @@ index.html              page shell + floating tab bar
 icon.svg                app icon
 css/styles.css          Liquid Glass styles (light + dark mode)
 js/app.js               starts the app, navigation between screens
-js/store.js             data storage (localStorage now, Google Sheets later)
+js/store.js             talks to the Google Sheets web app
 js/nutrition.js         all calorie / macro / energy maths (pure functions)
 js/ui.js                shared helpers: formatting, icons, bottom sheet, toast
 js/screens/home.js      Home
@@ -91,5 +139,8 @@ js/screens/ingredients.js  ingredient editor used by recipes and drinks
 js/screens/log.js       logging sheets (food/drink/recipe, exercise)
 js/screens/reports.js   Reports (day, week, weight)
 js/screens/profile.js   Profile, goal picker and recommended calories
+js/screens/connect.js   Google Sheets connection screen
+apps-script/Code.gs     Google Apps Script backend (paste into the spreadsheet)
 tests/nutrition.test.js unit tests for the maths
+tests/apps-script.test.js  tests for the Sheets backend (with an in-memory Apps Script stand-in)
 ```

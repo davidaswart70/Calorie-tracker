@@ -53,6 +53,12 @@ export function render(el, app) {
     </section>
 
     <section class="card glass">
+      <h2>Google Sheets</h2>
+      <p class="small muted" style="margin:-4px 0 12px">Your data is saved in your Google Sheet. The connection details are stored on this device only.</p>
+      <button class="btn ghost block small" id="disconnect">Change connection</button>
+    </section>
+
+    <section class="card glass">
       <details class="maths">
         <summary>How these numbers are calculated</summary>
         <p><b>BMR</b> (calories at rest), Mifflin–St Jeor:<br>
@@ -130,6 +136,10 @@ export function render(el, app) {
     draw();
   }));
   draw();
+
+  $('disconnect').onclick = () => {
+    if (confirm('Disconnect this device from your Google Sheet? Your data stays in the sheet; you can reconnect with the URL and passcode.')) app.disconnect();
+  };
 
   $('save').onclick = async (e) => {
     const p = profile();
