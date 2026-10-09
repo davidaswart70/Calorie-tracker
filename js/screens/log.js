@@ -23,39 +23,58 @@ export function openLogSheet(app, pre = null, date = N.dateStr()) {
   openSheet('Log food or drink', (body, close) => {
     if (pre) return showAmount(pre);
 
+    const TABS = [['food', 'Food'], ['drink', 'Drinks'], ['recipe', 'Recipes']];
+    const NOUN = { food: 'food', drink: 'drink', recipe: 'recipe' };
+    let tab = app.state.logTab || 'food';
+
     body.innerHTML = `
-      <label class="search">${icon.search}<input class="input" type="search" placeholder="Search Fridge, Bar & Cookbook" autocomplete="off" id="q"></label>
+      ${seg('cat', TABS, tab)}
+      <label class="search">${icon.search}<input class="input" type="search" autocomplete="off" id="q"></label>
       <ul class="list" id="results"></ul>`;
     const q = body.querySelector('#q');
     const results = body.querySelector('#results');
 
     const draw = () => {
       const term = q.value.trim().toLowerCase();
-      const items = allItems(app.data).filter(({ item }) => item.name.toLowerCase().includes(term));
+      q.placeholder = `Search ${TABS.find((t) => t[0] === tab)[1].toLowerCase()}`;
+      const matches = allItems(app.data).filter(({ item }) => item.name.toLowerCase().includes(term));
+      const items = matches.filter((m) => m.type === tab);
+      // Point to matches in the other categories when searching.
+      const elsewhere = term ? TABS.filter(([t]) => t !== tab).map(([t, label]) => [t, label, matches.filter((m) => m.type === t).length]).filter((x) => x[2]) : [];
+      const hint = elsewhere.length ? `<li class="empty" style="display:block"><p class="small">Also found in ${elsewhere.map(([t, label, n]) =>
+        `<button type="button" class="btn ghost small" data-jump="${t}">${label} (${n})</button>`).join(' ')}</p></li>` : '';
+
       if (!items.length) {
-        results.innerHTML = `<li class="empty" style="display:block">
-          <p>${term ? `No saved item called “${esc(q.value.trim())}”.` : 'Nothing saved yet.'}</p>
-          <div class="grid-2">
-            <a class="btn secondary small" href="#fridge" data-add="fridge">Add to Fridge</a>
-            <a class="btn secondary small" href="#bar" data-add="bar">Add to Bar</a>
-          </div></li>`;
-        // The Fridge/Bar screen opens its "add" form with this name filled in.
-        results.querySelectorAll('[data-add]').forEach((a) => (a.onclick = () => {
-          app.state.addName = q.value.trim() || ' ';
-          close();
-          if (location.hash === a.getAttribute('href')) app.render();
-        }));
-        return;
+        const add = tab === 'recipe'
+          ? '<a class="btn secondary small" href="#cookbook" data-add="cookbook">Go to Our Cookbook</a>'
+          : `<a class="btn secondary small" href="#${tab === 'food' ? 'fridge' : 'bar'}" data-add="${tab}">Add ${term ? `“${esc(q.value.trim())}”` : `a ${NOUN[tab]}`} to ${tab === 'food' ? 'Our Fridge' : 'Our Bar'}</a>`;
+        results.innerHTML = `${hint}<li class="empty" style="display:block">
+          <p>${term ? `No ${NOUN[tab]} called “${esc(q.value.trim())}”.` : `No ${NOUN[tab]}s saved yet.`}</p>${add}</li>`;
+      } else {
+        results.innerHTML = items.map(({ type, item }, i) => {
+          const p = N.displayPortion(app.data, type, item);
+          return `<li class="tap" data-i="${i}">
+            <div class="grow"><div class="title">${esc(item.name)}</div>
+              <div class="sub">per ${esc(p.label)}</div></div>
+            <div class="value num">${fmt0(p.kcal)}<small>kcal</small></div></li>`;
+        }).join('') + hint;
+        results.querySelectorAll('li[data-i]').forEach((li) => (li.onclick = () => showAmount(items[li.dataset.i])));
       }
-      results.innerHTML = items.map(({ type, item }, i) => {
-        const p = N.displayPortion(app.data, type, item);
-        return `<li class="tap" data-i="${i}">
-          <div class="grow"><div class="title">${esc(item.name)}</div>
-            <div class="sub"><span class="badge badge-type">${TYPE_LABEL[type]}</span> per ${esc(p.label)}</div></div>
-          <div class="value num">${fmt0(p.kcal)}<small>kcal</small></div></li>`;
-      }).join('');
-      results.querySelectorAll('li[data-i]').forEach((li) => (li.onclick = () => showAmount(items[li.dataset.i])));
+      // The Fridge/Bar screen opens its "add" form with this name filled in.
+      results.querySelectorAll('[data-add]').forEach((a) => (a.onclick = () => {
+        if (a.dataset.add !== 'cookbook') app.state.addName = q.value.trim() || ' ';
+        close();
+        if (location.hash === a.getAttribute('href')) app.render();
+      }));
+      results.querySelectorAll('[data-jump]').forEach((b) => (b.onclick = () => select(b.dataset.jump)));
     };
+
+    const select = (t) => {
+      tab = app.state.logTab = t;
+      body.querySelectorAll('[data-seg="cat"] button').forEach((b) => b.classList.toggle('active', b.dataset.value === t));
+      draw();
+    };
+    wireSegs(body, (_, t) => select(t));
     q.oninput = draw;
     draw();
 
