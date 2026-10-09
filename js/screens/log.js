@@ -70,7 +70,7 @@ function showAmountForm(app, body, close, { type, item }, date) {
   const defUnit = units.includes('serving') ? 'serving' : units[0];
   const defQty = defUnit === 'serving' ? 1 : 100;
   const unitName = (u) => (u === 'serving'
-    ? (type === 'recipe' || N.isComposite(app.data, type, item) ? 'serving' : `serving (${fmt0(item.servingSize)} ${item.unit})`)
+    ? (N.isComposite(app.data, type, item) || item.unit === 'serving' ? 'serving' : `serving (${fmt0(item.servingSize)} ${item.unit})`)
     : u);
 
   body.innerHTML = `

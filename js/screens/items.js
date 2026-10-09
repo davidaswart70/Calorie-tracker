@@ -74,7 +74,7 @@ function openItemForm(app, type, item = null, presetName = '') {
 
       <div id="simple">
         <div class="stack">
-          ${seg('unit', [['g', 'Solid (g)'], ['ml', 'Liquid (ml)']], v.unit || cfg.defaultUnit)}
+          ${seg('unit', [['g', 'Per 100 g'], ['ml', 'Per 100 ml'], ['serving', 'Per serving']], v.unit || cfg.defaultUnit)}
           <div class="small muted" id="per-label"></div>
           <div class="grid-2">
             <label class="field"><span>Energy (kcal)</span><input class="input num" id="kcal" inputmode="decimal" value="${esc(v.kcal)}"></label>
@@ -113,7 +113,7 @@ function openItemForm(app, type, item = null, presetName = '') {
       return {
         name: $('name').value.trim(),
         unit: composite ? 'ml' : unit(),
-        servingSize: $('serving').value.trim() === '' ? '' : N.num($('serving').value),
+        servingSize: !composite && unit() === 'serving' ? '' : $('serving').value.trim() === '' ? '' : N.num($('serving').value),
         kcal: composite ? '' : $('kcal').value.trim() === '' ? '' : N.num($('kcal').value),
         protein: composite ? '' : N.num($('protein').value),
         carbs: composite ? '' : N.num($('carbs').value),
@@ -126,9 +126,12 @@ function openItemForm(app, type, item = null, presetName = '') {
     function draw() {
       $('simple').classList.toggle('hidden', composite);
       $('composite-box').classList.toggle('hidden', !composite);
+      const perServing = !composite && unit() === 'serving';
+      const per = perServing ? 'serving' : `100 ${unit()}`;
       $('serving-label').textContent = composite ? 'Volume of one drink (ml)' : `Serving size (${unit()})`;
-      $('per-label').textContent = `Nutrition per 100 ${unit()}`;
-      $('kj').textContent = $('kcal').value ? `= ${kj(N.num($('kcal').value))} per 100 ${unit()}` : '';
+      $('serving').closest('.field').classList.toggle('hidden', perServing);
+      $('per-label').textContent = `Nutrition per ${per}`;
+      $('kj').textContent = $('kcal').value ? `= ${kj(N.num($('kcal').value))} per ${per}` : '';
 
       if (composite) {
         const t = previewTotals(app, editor.get());
@@ -138,7 +141,7 @@ function openItemForm(app, type, item = null, presetName = '') {
       }
       const s = N.num($('serving').value);
       const vals = values();
-      if (s > 0 && vals.kcal !== '') {
+      if (!perServing && s > 0 && vals.kcal !== '') {
         const n = N.scale(vals, s / 100);
         $('preview').innerHTML = `<div class="small muted">Per serving (${fmt1(s)} ${unit()})</div>
           <div class="big num">${kcal(n.kcal)}</div><div class="small muted num">${kj(n.kcal)} · ${macroLine(n)}</div>`;
