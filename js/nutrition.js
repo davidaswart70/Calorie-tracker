@@ -372,3 +372,88 @@ export function latestWeight(weights, onOrBefore = '9999-12-31') {
     .filter((w) => w.date <= onOrBefore && num(w.weightKg) > 0)
     .sort((a, b) => (a.date < b.date ? 1 : -1))[0] || null;
 }
+
+// ---------- Real maintenance (adaptive TDEE) ----------
+
+export const ADAPTIVE = { windowDays: 28, minSpanDays: 14, minLoggedDays: 10, minLoggedShare: 0.7 };
+
+const dayNum = (str) => { const [y, m, d] = str.split('-').map(Number); return Date.UTC(y, m - 1, d) / 86400000; };
+
+/**
+ * Estimate actual maintenance calories from logged intake and the weight trend:
+ * maintenance = average intake − (weight change per day × 7700).
+ * Uses up to the last 28 days; needs weigh-ins at least 14 days apart and most days logged.
+ */
+export function realMaintenance(logs, weights, settings, today = dateStr()) {
+  const windowStart = addDays(today, -(ADAPTIVE.windowDays - 1));
+  const ws = weights
+    .filter((w) => num(w.weightKg) > 0 && w.date >= windowStart && w.date <= today)
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+  const span = ws.length >= 2 ? dayNum(ws[ws.length - 1].date) - dayNum(ws[0].date) : 0;
+  const from = ws.length ? ws[0].date : today;
+  const to = ws.length ? ws[ws.length - 1].date : today;
+  const days = [];
+  for (let d = from; d <= to; d = addDays(d, 1)) days.push(dayTotals(logs, d));
+  const logged = days.filter((d) => d.entries.some((e) => !isExercise(e)));
+  const base = { span, loggedDays: logged.length, periodDays: days.length, needDays: ADAPTIVE.minSpanDays };
+
+  if (ws.length < 2 || span < ADAPTIVE.minSpanDays) return { ready: false, reason: 'weights', ...base };
+  if (logged.length < ADAPTIVE.minLoggedDays || logged.length / days.length < ADAPTIVE.minLoggedShare) {
+    return { ready: false, reason: 'logs', ...base };
+  }
+
+  const avgIntake = logged.reduce((s, d) => s + d.eaten.kcal, 0) / logged.length;
+  const avgBurned = days.reduce((s, d) => s + d.burned, 0) / days.length;
+  const rate = weightRate(ws); // kg per week
+  const maintenance = avgIntake - (rate / 7) * KCAL_PER_KG;
+
+  const p = profileFromSettings(settings);
+  const goal = GOALS.find((g) => g.id === p.goal) || GOALS.find((g) => g.id === 'maintain');
+  const formula = profileComplete(p) ? tdee(p) : null;
+  // If logged exercise is added back to the allowance, leave the average exercise out of the base target.
+  const base2 = maintenance - (settings.addExercise === 'yes' ? avgBurned : 0);
+  const floor = MIN_KCAL[p.sex] || 0;
+  const raw = base2 + goalAdjustment(goal.kgPerWeek);
+  return {
+    ready: true, ...base,
+    avgIntake, avgBurned, rate, maintenance, formula, goal,
+    suggested: roundTo(Math.max(raw, floor), 10),
+    floored: raw < floor,
+    current: dailyTarget(settings).kcal,
+  };
+}
+
+// ---------- Streaks ----------
+
+/**
+ * Current and best runs of consecutive days: logging anything, staying at/under target,
+ * and reaching 90 % of the protein goal. A streak stays alive if today isn't logged yet.
+ */
+export function streaks(logs, settings, today = dateStr()) {
+  const target = dailyTarget(settings);
+  const byDate = new Map();
+  for (const l of logs) if (l.date && l.date <= today) byDate.set(l.date, true);
+  const dates = [...byDate.keys()].sort();
+  const result = {};
+  const tests = {
+    logging: (d) => d.entries.some((e) => !isExercise(e)),
+    onTarget: (d) => target.kcal > 0 && d.entries.some((e) => !isExercise(e)) && d.eaten.kcal <= target.kcal + (target.addExercise ? d.burned : 0),
+    protein: (d) => target.macros && d.eaten.protein >= target.macros.protein * 0.9,
+  };
+  for (const [key, ok] of Object.entries(tests)) {
+    let best = 0, run = 0, prev = null;
+    for (const date of dates) {
+      const good = ok(dayTotals(logs, date));
+      if (good && prev && addDays(prev, 1) === date) run += 1;
+      else run = good ? 1 : 0;
+      if (good) prev = date; else prev = null;
+      best = Math.max(best, run);
+    }
+    // Current: count back from today (or yesterday if today has nothing logged yet).
+    let current = 0;
+    let d = ok(dayTotals(logs, today)) ? today : addDays(today, -1);
+    while (ok(dayTotals(logs, d))) { current += 1; d = addDays(d, -1); }
+    result[key] = { current, best: Math.max(best, current) };
+  }
+  return result;
+}

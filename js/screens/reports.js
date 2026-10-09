@@ -4,6 +4,8 @@ import { esc, fmt0, fmt1, kcal, kj, prettyDate, icon, seg, wireSegs, saveInBackg
 import { ring, donut, bars, line, legend, animate } from '../charts.js';
 import { logRow, wireDeletes, openLogSheet } from './log.js';
 import { openMealSheet } from './meal.js';
+import { awardsTab } from './awards-view.js';
+import { maintenanceCard, wireMaintenanceCard } from './maintenance.js';
 
 const MACROS = [
   { key: 'protein', label: 'Protein', cls: 'protein' },
@@ -15,10 +17,11 @@ export function render(el, app) {
   const today = N.dateStr();
   const st = (app.state.reports ??= { tab: 'week', day: today, end: today, macro: 'protein' });
   st.end ??= today;
+  st.day ??= today;
 
   el.innerHTML = `
     <header class="page-head"><div><p class="eyebrow">Your progress</p><h1>Reports</h1></div></header>
-    <div style="margin-bottom:14px">${seg('tab', [['day', 'Day'], ['week', 'Week'], ['month', 'Month'], ['weight', 'Weight']], st.tab)}</div>
+    <div style="margin-bottom:14px">${seg('tab', [['day', 'Day'], ['week', 'Week'], ['month', 'Month'], ['weight', 'Weight'], ['awards', 'Awards']], st.tab)}</div>
     <div id="tab"></div>`;
   wireSegs(el.querySelector('.page-head').nextElementSibling, (_, v) => { st.tab = v; draw(); });
 
@@ -31,6 +34,7 @@ export function render(el, app) {
     if (st.tab === 'day') dayTab(inner, app, st);
     else if (st.tab === 'week') periodTab(inner, app, st, 7);
     else if (st.tab === 'month') periodTab(inner, app, st, 30);
+    else if (st.tab === 'awards') awardsTab(inner, app);
     else weightTab(inner, app);
     animate(inner);
   };
@@ -273,6 +277,7 @@ function weightTab(el, app) {
         ${weights.length > 1 ? '<div class="chart" id="weight-chart" style="margin-top:12px"></div>' : '<p class="small muted">Log at least two weights to see a trend.</p>'}`
         : '<div class="empty"><p>No weights logged yet.</p></div>'}
     </section>
+    ${maintenanceCard(app)}
     ${weights.length ? `<section class="card glass"><h2>History</h2><ul class="list">${[...weights].reverse().map((w) => `
       <li><div class="grow"><div class="title">${esc(prettyDate(w.date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }))}</div></div>
         <div class="value num">${fmt1(w.weightKg)} kg</div>
@@ -287,6 +292,7 @@ function weightTab(el, app) {
       () => (!latest || date >= latest.date ? app.store.saveSettings({ weightKg: kg }, { date, weightKg: kg }) : app.store.saveWeight(date, kg)),
       `Saved ${fmt1(kg)} kg`);
   };
+  wireMaintenanceCard(el, app);
   el.querySelectorAll('[data-delw]').forEach((b) => (b.onclick = () => {
     if (!confirm('Delete this weight entry?')) return;
     saveInBackground(app, () => app.store.remove('weights', b.dataset.delw), 'Weight entry deleted');

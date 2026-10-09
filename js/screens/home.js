@@ -3,6 +3,7 @@ import * as N from '../nutrition.js';
 import { esc, fmt0, kj, icon, prettyDate } from '../ui.js';
 import { openLogSheet, openExerciseSheet, logRow, wireDeletes } from './log.js';
 import { openMealSheet } from './meal.js';
+import { streakStrip, wireStreakStrip } from './awards-view.js';
 
 export function render(el, app) {
   const today = N.dateStr();
@@ -16,6 +17,7 @@ export function render(el, app) {
       <a class="icon-btn" href="#profile" aria-label="Profile and goals">${icon.gear}</a>
     </header>
     ${target.kcal ? hero(day, target) : setupCard(day)}
+    ${streakStrip(app)}
     <div class="actions">
       <button class="btn" id="log-food">${icon.plus} Food or drink</button>
       <button class="btn" id="log-meal">${icon.plus} Meal</button>
@@ -37,6 +39,7 @@ export function render(el, app) {
   el.querySelector('#log-meal').onclick = () => openMealSheet(app);
   el.querySelector('#log-ex').onclick = () => openExerciseSheet(app);
   wireDeletes(el, app);
+  wireStreakStrip(el, app);
 
   // Animate the ring from empty.
   const ring = el.querySelector('.ring .value');

@@ -12,7 +12,9 @@ Data is stored in your own Google Sheet.
 | **Our Fridge** | Saved foods with nutrition per 100 g or 100 ml, optional serving size |
 | **Our Bar** | Saved drinks — either with their own nutrition values, or made from ingredients (e.g. iced coffee = 200 ml milk + …) |
 | **Our Cookbook** | Recipes built from Fridge/Bar items, with servings; nutrition per serving is calculated |
-| **Reports** | Daily view, weekly chart and averages, biggest calorie sources of the week, weight log and trend |
+| **Reports** | Day, Week and Month dashboards with animated charts (calories, every macro, calorie split, running total), biggest calorie sources, weight trend, **real maintenance** worked out from your own logs, and **Awards** |
+| **Meal** (on Home) | Log several Fridge/Bar items as one meal, optionally saving it as a recipe |
+| **Streaks & awards** | Logging, on-target and protein streaks; serious and silly badges (a quarter of a cow 🐄, a flock of chickens 🐔 …) with confetti when unlocked |
 | **Profile** (⚙ on Home) | Sex, age, height, weight, body fat %, activity level, goal picker with recommended daily calories, macro targets |
 
 Every food and drink is marked **Label** (from the packaging) or **Estimated**. Recipes and
@@ -28,6 +30,8 @@ All calculations are in [`js/nutrition.js`](js/nutrition.js) and covered by test
 - **Goal** — `kg per week × 7700 ÷ 7` added to maintenance (e.g. −0.5 kg/week → −550 kcal/day).
   Never recommends below 1200 kcal (women) / 1500 kcal (men).
 - **Macro targets** — protein 1.6–2.0 g/kg (depending on goal), fat 25 % of calories, carbs the rest.
+- **Real maintenance** — after ≥14 days between weigh-ins with most days logged:
+  `average intake − (weight change per day × 7700)`; suggests a target for your goal.
 - **Exercise** — `(MET − 1) × kg × hours`, MET values from the Compendium of Physical Activities.
   Optionally added to the day's allowance (Profile → "Add exercise to my allowance").
 - **kcal from macros** — Atwater factors: protein 4, carbs 4, fat 9, alcohol 7 kcal/g (result marked *Estimated*).
@@ -131,6 +135,8 @@ css/styles.css          Liquid Glass styles (light + dark mode)
 js/app.js               starts the app, navigation between screens
 js/store.js             talks to the Google Sheets web app
 js/nutrition.js         all calorie / macro / energy maths (pure functions)
+js/awards.js            streak and award rules (pure functions)
+js/charts.js            animated SVG charts
 js/ui.js                shared helpers: formatting, icons, bottom sheet, toast
 js/screens/home.js      Home
 js/screens/items.js     Our Fridge + Our Bar

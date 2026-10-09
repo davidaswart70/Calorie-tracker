@@ -7,6 +7,7 @@ import * as cookbook from './screens/cookbook.js';
 import * as reports from './screens/reports.js';
 import * as profile from './screens/profile.js';
 import * as connect from './screens/connect.js';
+import { checkNewAwards } from './screens/awards-view.js';
 
 const SCREENS = {
   home: (main, app) => home.render(main, app),
@@ -42,6 +43,7 @@ const app = {
       if (app.data) toast(err.message, 'error');
     }
     app.render();
+    if (app.data && !app.loadError) checkNewAwards(app);
   },
 
   render() {
