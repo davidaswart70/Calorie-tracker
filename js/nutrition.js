@@ -289,10 +289,10 @@ export function remainingKcal(target, day) {
   return allowance - day.eaten.kcal;
 }
 
-// Seven days ending on `endDate`, with averages over days that have food logged.
-export function weeklyReport(logs, endDate) {
+// `length` days ending on `endDate`, with averages over days that have food logged.
+export function periodReport(logs, endDate, length) {
   const days = [];
-  for (let i = 6; i >= 0; i--) days.push(dayTotals(logs, addDays(endDate, -i)));
+  for (let i = length - 1; i >= 0; i--) days.push(dayTotals(logs, addDays(endDate, -i)));
   const logged = days.filter((d) => d.entries.some((e) => !isExercise(e)));
   let total = zero();
   for (const d of logged) total = addTotals(total, d.eaten);
@@ -306,6 +306,45 @@ export function weeklyReport(logs, endDate) {
     average: scale(total, 1 / n),
     burned: days.reduce((s, d) => s + d.burned, 0),
   };
+}
+
+export const weeklyReport = (logs, endDate) => periodReport(logs, endDate, 7);
+
+// Calories from each macro (Atwater) and each one's share of those calories.
+export function macroEnergy(t) {
+  const protein = num(t.protein) * ATWATER.protein;
+  const carbs = num(t.carbs) * ATWATER.carbs;
+  const fat = num(t.fat) * ATWATER.fat;
+  const total = protein + carbs + fat;
+  const share = (v) => (total ? v / total : 0);
+  return { protein, carbs, fat, total, shares: { protein: share(protein), carbs: share(carbs), fat: share(fat) } };
+}
+
+// Running calorie total through a day: [{ minutes, kcal, name }], sorted by time.
+export function cumulativeByTime(entries) {
+  let total = 0;
+  return entries
+    .filter((e) => !isExercise(e))
+    .map((e) => {
+      const [h, m] = String(e.time || '12:00').split(':').map(Number);
+      return { minutes: (h || 0) * 60 + (m || 0), kcal: num(e.kcal), name: e.name };
+    })
+    .sort((a, b) => a.minutes - b.minutes)
+    .map((e) => ({ ...e, kcal: (total += e.kcal) }));
+}
+
+// Weight trend in kg per week (least-squares slope), or null with fewer than 2 entries.
+export function weightRate(weights) {
+  const pts = weights
+    .filter((w) => num(w.weightKg) > 0)
+    .map((w) => { const [y, m, d] = w.date.split('-').map(Number); return [Date.UTC(y, m - 1, d) / 86400000, num(w.weightKg)]; });
+  if (pts.length < 2) return null;
+  const mx = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+  const my = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+  const sxx = pts.reduce((s, p) => s + (p[0] - mx) ** 2, 0);
+  if (!sxx) return null;
+  const sxy = pts.reduce((s, p) => s + (p[0] - mx) * (p[1] - my), 0);
+  return (sxy / sxx) * 7;
 }
 
 // Items that contributed the most calories between two dates (inclusive).
