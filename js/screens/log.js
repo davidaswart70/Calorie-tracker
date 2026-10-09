@@ -202,20 +202,103 @@ export function logRow(l) {
   const title = split > 0 ? l.name.slice(0, split) : l.name;
   const contents = split > 0 ? l.name.slice(split + 2) : '';
   const amount = ex ? `${fmt0(l.quantity)} min` : meal ? 'Meal' : `${fmt1(l.quantity)} ${unitLabel(l.unit)}${l.unit === 'serving' && N.num(l.quantity) !== 1 ? 's' : ''}`;
-  return `<li>
+  return `<li class="tap" data-entry="${esc(l.id)}">
     <div class="grow"><div class="title">${ex ? icon.flame.replace('width="24" height="24"', 'width="15" height="15"') + ' ' : ''}${esc(title)}</div>
       ${contents ? `<div class="sub">${esc(contents)}</div>` : ''}
       <div class="sub">${esc(amount)} · ${esc(l.time || '')} ${ex ? '' : sourceBadge(l.source)}</div></div>
     <div class="value num">${ex ? '−' : ''}${fmt0(l.kcal)} kcal<small>${kj(l.kcal)}</small></div>
-    <button class="icon-btn plain" data-del="${esc(l.id)}" aria-label="Delete ${esc(l.name)}">${icon.trash}</button>
+    <span class="icon-btn plain" aria-hidden="true">${icon.pencil}</span>
   </li>`;
 }
 
-export function wireDeletes(container, app) {
-  container.querySelectorAll('[data-del]').forEach((b) => {
-    b.onclick = () => {
-      if (!confirm('Delete this entry?')) return;
-      saveInBackground(app, () => app.store.remove('logs', b.dataset.del), 'Entry deleted');
+/** Tapping an entry opens its edit sheet. */
+export function wireEntries(container, app) {
+  container.querySelectorAll('[data-entry]').forEach((li) => {
+    li.onclick = () => {
+      const entry = app.data.logs.find((l) => l.id === li.dataset.entry);
+      if (entry) openEditEntry(app, entry);
+    };
+  });
+}
+
+/**
+ * Edit a logged entry: date and time always; amount (food/drink/recipe), minutes (exercise)
+ * or name (meal). Calories are recalculated only when the amount changes; otherwise the
+ * values it was logged with are kept.
+ */
+export function openEditEntry(app, entry) {
+  const ex = entry.type === 'exercise';
+  const meal = entry.type === 'meal';
+  const item = !ex && !meal ? N.findItem(app.data, entry.type, entry.itemId) : null;
+  const exercise = ex ? N.EXERCISES.find((x) => x.id === entry.itemId) : null;
+  const weight = N.num(app.data.settings.weightKg);
+  const units = item ? N.unitsFor(app.data, entry.type, item) : [];
+  const canRecalc = Boolean(item) || Boolean(exercise && weight);
+  const startQty = N.num(entry.quantity);
+  const startUnit = entry.unit;
+
+  openSheet('Edit entry', (body, close) => {
+    body.innerHTML = `
+      ${meal ? `<label class="field"><span>Name</span><input class="input" id="name" value="${esc(entry.name)}"></label>`
+        : `<div><div class="title" style="font-size:20px;font-weight:700">${esc(entry.name)}</div>
+            <div class="small muted">${ex ? 'Exercise' : TYPE_LABEL[entry.type] || ''}</div></div>`}
+      <div class="grid-2">
+        <label class="field"><span>Date</span><input class="input" id="date" type="date" value="${esc(entry.date)}"></label>
+        <label class="field"><span>Time</span><input class="input" id="time" type="time" value="${esc(entry.time || '12:00')}"></label>
+      </div>
+      ${canRecalc ? `<label class="field"><span>${ex ? 'Minutes' : 'Amount'}</span><input class="input num" id="qty" inputmode="decimal" value="${fmt1(startQty)}"></label>
+        ${units.length > 1 ? seg('unit', units.map((u) => [u, u === 'serving' && N.num(item.servingSize) && item.unit !== 'serving' && !N.isComposite(app.data, entry.type, item) ? `serving (${fmt0(item.servingSize)} ${item.unit})` : u]), units.includes(startUnit) ? startUnit : units[0]) : ''}`
+        : !meal ? '<p class="small muted" style="margin:0">The saved item no longer exists, so only the date and time can be changed.</p>' : ''}
+      <div class="preview" id="preview"></div>
+      <div class="sheet-actions"><button class="btn" id="save">Save changes</button></div>
+      <button class="btn danger block small" id="delete">${icon.trash} Delete entry</button>`;
+
+    const $ = (id) => body.querySelector(`#${id}`);
+    const unit = () => (units.length > 1 ? segValue(body, 'unit') : units[0] || startUnit);
+    const changedAmount = () => canRecalc && (N.num($('qty').value) !== startQty || unit() !== startUnit);
+
+    const calc = () => {
+      if (!changedAmount()) return null;
+      const q = N.num($('qty').value);
+      if (ex) return { kcal: N.exerciseKcal(exercise.met, weight, q), protein: '', carbs: '', fat: '', source: 'estimated' };
+      return N.nutritionFor(app.data, entry.type, item, q, unit());
+    };
+
+    const draw = () => {
+      const n = calc() || { kcal: N.num(entry.kcal), protein: N.num(entry.protein), carbs: N.num(entry.carbs), fat: N.num(entry.fat), source: entry.source };
+      $('preview').innerHTML = `
+        <div class="row"><div class="grow"><div class="big num">${ex ? '−' : ''}${kcal(n.kcal)}</div><div class="small muted num">${kj(n.kcal)}</div></div>${ex ? '' : sourceBadge(n.source)}</div>
+        ${ex ? '' : `<div class="small num" style="margin-top:6px">${macroLine(n)}</div>`}
+        ${changedAmount() ? '<div class="tiny" style="margin-top:6px">Recalculated from the saved values</div>' : ''}`;
+    };
+    wireSegs(body, (_, u) => { $('qty').value = u === 'serving' ? 1 : 100; draw(); });
+    $('qty')?.addEventListener('input', draw);
+    draw();
+
+    $('save').onclick = () => {
+      const changes = { date: $('date').value || entry.date, time: $('time').value || entry.time };
+      if (meal) {
+        const name = $('name').value.trim();
+        if (!name) return $('name').focus();
+        changes.name = name;
+      }
+      if (canRecalc) {
+        const q = N.num($('qty').value);
+        if (q <= 0) return $('qty').focus();
+        const n = calc();
+        if (n) {
+          Object.assign(changes, { quantity: q, unit: unit(), kcal: round1(n.kcal), source: n.source });
+          if (!ex) Object.assign(changes, { protein: round1(n.protein), carbs: round1(n.carbs), fat: round1(n.fat) });
+        }
+      }
+      close();
+      saveInBackground(app, () => app.store.update('logs', entry.id, changes), 'Entry updated');
+    };
+
+    $('delete').onclick = () => {
+      if (!confirm(`Delete this entry?`)) return;
+      close();
+      saveInBackground(app, () => app.store.remove('logs', entry.id), 'Entry deleted');
     };
   });
 }

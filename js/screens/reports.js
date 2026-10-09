@@ -2,7 +2,7 @@
 import * as N from '../nutrition.js';
 import { esc, fmt0, fmt1, kcal, kj, prettyDate, icon, seg, wireSegs, saveInBackground } from '../ui.js';
 import { ring, donut, bars, line, legend, animate } from '../charts.js';
-import { groupedLogRows, wireDeletes, openLogSheet } from './log.js';
+import { groupedLogRows, wireEntries, openLogSheet } from './log.js';
 import { playWrapped } from './wrapped-view.js';
 import { openMealSheet } from './meal.js';
 import { awardsTab } from './awards-view.js';
@@ -129,7 +129,7 @@ function dayTab(el, app, st) {
   }));
   el.querySelector('#add').onclick = () => openLogSheet(app, null, st.day);
   el.querySelector('#add-meal').onclick = () => openMealSheet(app, st.day);
-  wireDeletes(el, app);
+  wireEntries(el, app);
 }
 
 // ---------- Week / Month ----------
