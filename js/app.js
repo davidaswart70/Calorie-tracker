@@ -51,6 +51,7 @@ const app = {
     const connected = Boolean(store.getConnection());
     document.body.classList.toggle('no-tabbar', !connected || (!app.data && Boolean(app.loadError)));
 
+    document.body.dataset.screen = connected ? app.screen : 'connect';
     if (!connected) return mount(main, (el) => connect.render(el, app));
     if (!app.data && app.loadError) return showError(app.loadError);
     if (!app.data) return;

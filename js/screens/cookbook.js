@@ -9,24 +9,24 @@ export function render(el, app) {
 
   el.innerHTML = `
     <header class="page-head">
-      <div><p class="eyebrow">Saved recipes</p><h1>Our Cookbook</h1></div>
+      <div><p class="eyebrow">Family favourites</p><h1>Our Cookbook</h1></div>
       <button class="icon-btn" id="add" aria-label="Add recipe">${icon.plus}</button>
     </header>
-    <section class="card glass">
-      ${recipes.length ? `<ul class="list">${recipes.map((r) => {
+    ${recipes.length ? `<div class="recipe-box">${recipes.map((r, i) => {
         const one = N.nutritionFor(app.data, 'recipe', r, 1, 'serving');
-        const count = N.ingredientsOf(app.data, 'recipe', r.id).length;
-        return `<li class="tap" data-id="${esc(r.id)}">
-          <div class="grow"><div class="title">${esc(r.name)}</div>
-            <div class="sub num">${count} ingredient${count === 1 ? '' : 's'} · ${fmt0(r.servings)} serving${N.num(r.servings) === 1 ? '' : 's'}</div>
-            <div class="sub num">${macroLine(one)}</div>
-            <div class="sub" style="margin-top:3px">${sourceBadge(one.source)}</div></div>
-          <div class="value num">${fmt0(one.kcal)} kcal<small>per serving</small></div></li>`;
-      }).join('')}</ul>`
-        : `<div class="empty"><p>No recipes yet. Recipes are built from items in Our Fridge and Our Bar.</p><button class="btn" id="add2">${icon.plus} Add a recipe</button></div>`}
-    </section>`;
+        const ings = N.ingredientsOf(app.data, 'recipe', r.id).map((g) => N.findItem(app.data, g.itemType, g.itemId)?.name).filter(Boolean);
+        return `<button class="recipe-card" style="--tilt:${i % 2 ? 0.8 : -0.6}deg" data-id="${esc(r.id)}">
+          <div class="rc-head"><span class="rc-title">${esc(r.name)}</span><span class="rc-kcal num">${fmt0(one.kcal)}<small>kcal</small></span></div>
+          <div class="rc-body">
+            <p>Serves ${fmt0(r.servings)} · ${ings.length} ingredient${ings.length === 1 ? '' : 's'} · ${one.source === 'label' ? 'label values' : 'estimated'}</p>
+            <p>${esc(ings.join(', ') || 'No ingredients yet')}</p>
+            <p class="num">Per serving: ${macroLine(one)}</p>
+          </div>
+        </button>`;
+      }).join('')}</div>`
+      : `<section class="card glass"><div class="empty"><p>No recipes yet. Recipes are built from items in Our Fridge and Our Bar.</p><button class="btn" id="add2">${icon.plus} Add a recipe</button></div></section>`}`;
 
-  el.querySelectorAll('li[data-id]').forEach((li) => (li.onclick = () => openRecipeForm(app, recipes.find((r) => r.id === li.dataset.id))));
+  el.querySelectorAll('[data-id]').forEach((li) => (li.onclick = () => openRecipeForm(app, recipes.find((r) => r.id === li.dataset.id))));
   el.querySelector('#add').onclick = () => openRecipeForm(app);
   el.querySelector('#add2')?.addEventListener('click', () => openRecipeForm(app));
 }

@@ -1,43 +1,56 @@
 /* =========================================================
-   Calorie Tracker — Liquid Glass-inspired styles
-   Colours are tokens on :root; dark mode follows the iPhone setting.
+   Calorie Tracker — kitchen theme
+   Home is the counter, Our Fridge a fridge door with magnets,
+   Our Bar a chalkboard menu, Our Cookbook a box of recipe cards.
+   Colours are tokens on :root; dark mode is "the kitchen at night".
    ========================================================= */
 
 :root {
-  --bg: #eef4ef;
-  --blob-1: #b9e6c6;
-  --blob-2: #cfe9e2;
-  --blob-3: #e4ecd2;
+  --font: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --chalk: "Caveat", "Bradley Hand", "Segoe Print", cursive;
 
-  --glass: rgba(255, 255, 255, 0.52);
-  --glass-strong: rgba(255, 255, 255, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.75);
-  --glass-shadow: 0 10px 34px rgba(20, 60, 35, 0.09), 0 1px 2px rgba(20, 60, 35, 0.05);
-  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --bg: #f3ebdf;            /* warm counter */
+  --tile: #f8f2e8;          /* backsplash tiles */
+  --grout: #e2d6c3;
 
-  --text: #142019;
-  --text-2: #4d5d53;
-  --text-3: #7f8d84;
-  --line: rgba(20, 50, 30, 0.09);
-  --field: rgba(255, 255, 255, 0.6);
+  /* "glass" tokens are kept as names but now mean paper surfaces */
+  --glass: #fffaf2;
+  --glass-strong: #fffdf8;
+  --glass-border: rgba(96, 66, 36, 0.12);
+  --glass-shadow: 0 1px 0 rgba(96, 66, 36, 0.06), 0 10px 24px -12px rgba(96, 66, 36, 0.35);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 
-  --green: #1f9d55;
-  --green-strong: #168044;
-  --green-soft: rgba(31, 157, 85, 0.13);
-  --on-green: #ffffff;
-  --track: rgba(20, 60, 35, 0.09);
-  --amber: #b26a00;
-  --amber-soft: rgba(214, 140, 20, 0.15);
-  --red: #c6362c;
-  --red-soft: rgba(198, 54, 44, 0.12);
+  --text: #2b2118;          /* espresso ink */
+  --text-2: #6b5a4a;
+  --text-3: #9a8877;
+  --line: rgba(96, 66, 36, 0.13);
+  --field: #f8f1e6;
+
+  --green: #2f7a4a;         /* herb green: main actions */
+  --green-strong: #24603a;
+  --green-soft: rgba(47, 122, 74, 0.13);
+  --on-green: #fffaf2;
+  --tomato: #d9482b;
+  --butter: #f2c14e;
+  --track: rgba(96, 66, 36, 0.11);
+  --amber: #b5630a;
+  --amber-soft: rgba(214, 140, 20, 0.16);
+  --red: #c0392b;
+  --red-soft: rgba(192, 57, 43, 0.12);
 
   /* Macro colours: checked for colour-blind separation and contrast */
   --protein: #1f9d55;
   --carbs: #3b7fd4;
   --fat: #b87a12;
 
-  --r-lg: 26px;
-  --r-md: 18px;
+  --wood-1: #b98552;
+  --wood-2: #9a6a3d;
+  --board: #2e3a35;         /* chalkboard */
+  --chalk-ink: #f4f1e8;
+
+  --r-lg: 22px;
+  --r-md: 16px;
   --r-sm: 12px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --nav-h: 66px;
@@ -46,28 +59,28 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0b130f;
-    --blob-1: #164a2c;
-    --blob-2: #123a38;
-    --blob-3: #2a3418;
+    --bg: #1b1511;
+    --tile: #241c16;
+    --grout: #2f251d;
 
-    --glass: rgba(30, 42, 35, 0.5);
-    --glass-strong: rgba(34, 48, 40, 0.78);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --glass-shadow: 0 10px 34px rgba(0, 0, 0, 0.35);
-    --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    --glass: #2a211b;
+    --glass-strong: #31271f;
+    --glass-border: rgba(255, 236, 210, 0.08);
+    --glass-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.7);
+    --glass-highlight: inset 0 1px 0 rgba(255, 236, 210, 0.05);
 
-    --text: #e9f1ec;
-    --text-2: #a9b8ae;
-    --text-3: #7d8c83;
-    --line: rgba(255, 255, 255, 0.08);
-    --field: rgba(255, 255, 255, 0.07);
+    --text: #f3e9dc;
+    --text-2: #c4b3a0;
+    --text-3: #8f7f6e;
+    --line: rgba(255, 236, 210, 0.09);
+    --field: #231b16;
 
-    --green: #3ccf7a;
-    --green-strong: #5fe095;
-    --green-soft: rgba(60, 207, 122, 0.16);
-    --on-green: #06210f;
-    --track: rgba(255, 255, 255, 0.09);
+    --green: #6cbf86;
+    --green-strong: #8fd6a5;
+    --green-soft: rgba(108, 191, 134, 0.15);
+    --on-green: #13241a;
+    --tomato: #ee6a4d;
+    --track: rgba(255, 236, 210, 0.1);
     --amber: #f0b45a;
     --amber-soft: rgba(240, 180, 90, 0.15);
     --red: #ff7a6e;
@@ -76,6 +89,10 @@
     --protein: #2aa862;
     --carbs: #4a8ae3;
     --fat: #bd8526;
+
+    --wood-1: #7a5434;
+    --wood-2: #5e3f26;
+    --board: #1f2925;
   }
 }
 
@@ -89,7 +106,7 @@ body {
   min-height: 100dvh;
   background: var(--bg);
   color: var(--text);
-  font: 16px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font: 16px/1.45 var(--font);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }
@@ -639,3 +656,214 @@ details.maths code { font-size: 13px; }
   .page-head h1 { font-size: 28px; }
   .ing-row { grid-template-columns: 1fr 64px 84px 34px; }
 }
+
+/* =========================================================
+   Kitchen theme: per-screen looks and component overrides
+   ========================================================= */
+
+/* --- Backsplash tiles at the top of the page, fading into the counter --- */
+.blob { display: none; }
+.backdrop {
+  position: absolute; inset: 0 0 auto 0; height: 360px; z-index: -1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='32'%3E%3Cpath d='M0 .75H64M0 16.75H64M.75 0V16M32.75 16V32' fill='none' stroke='%23604224' stroke-opacity='.14' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-color: var(--tile);
+  -webkit-mask-image: linear-gradient(#000 55%, transparent);
+  mask-image: linear-gradient(#000 55%, transparent);
+}
+@media (prefers-color-scheme: dark) {
+  .backdrop { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='32'%3E%3Cpath d='M0 .75H64M0 16.75H64M.75 0V16M32.75 16V32' fill='none' stroke='%23ffe6c8' stroke-opacity='.07' stroke-width='1.5'/%3E%3C/svg%3E"); }
+}
+
+/* --- Type --- */
+.page-head h1 { font-family: var(--serif); font-weight: 650; font-size: 36px; letter-spacing: -0.015em; font-variation-settings: "opsz" 96; }
+.card h2, .sheet-head h2, .celebrate-card h2 { font-family: var(--serif); font-weight: 600; letter-spacing: -0.005em; font-variation-settings: "opsz" 36; }
+.card h2 { font-size: 19px; }
+.eyebrow { text-transform: uppercase; letter-spacing: 0.12em; font-size: 12px; font-weight: 700; color: var(--tomato); }
+.ring-label strong, .ring-center strong, .preview .big, .tile b, .fast-time, .big,
+.stat b, .magnet-kcal, .rc-kcal, .streak-chip b, .fast-streak b {
+  font-family: var(--serif); font-weight: 650; font-variation-settings: "opsz" 72;
+}
+
+/* --- Paper cards instead of frosted glass (glass stays for tab bar, sheets and toasts) --- */
+.card.glass {
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+.streaks.glass { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--glass); }
+
+/* --- Buttons: ceramic-ish with a small pressed edge --- */
+.btn { border-radius: 14px; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.18); }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.18); }
+.btn.secondary { background: #f6e3b4; color: #5a3d14; }
+.btn.ghost, .btn.danger { box-shadow: none; }
+@media (prefers-color-scheme: dark) { .btn.secondary { background: rgba(242, 193, 78, 0.16); color: var(--butter); } }
+.icon-btn { background: var(--glass); border-color: var(--glass-border); box-shadow: var(--glass-shadow); }
+.icon-btn.plain { box-shadow: none; }
+
+/* --- Tab bar: an espresso-coloured shelf --- */
+.tabbar { background: rgba(43, 33, 24, 0.92); border-color: rgba(255, 236, 210, 0.08); }
+.tabbar a { color: rgba(255, 244, 228, 0.62); }
+.tabbar a.active { color: var(--butter); }
+.tab-indicator { background: rgba(242, 193, 78, 0.16); }
+@media (prefers-color-scheme: dark) { .tabbar { background: rgba(58, 45, 35, 0.92); } }
+
+/* --- Sheets get a gingham tea-towel edge --- */
+.sheet { background: var(--glass-strong); overflow: hidden; }
+.sheet::before {
+  content: ""; display: block; height: 10px; flex: none;
+  background-color: #fffaf2;
+  background-image: linear-gradient(90deg, rgba(217, 72, 43, 0.45) 50%, transparent 50%), linear-gradient(rgba(217, 72, 43, 0.45) 50%, transparent 50%);
+  background-size: 12px 12px;
+}
+.toast { background: var(--glass-strong); }
+
+/* --- Home: today's calories on a dinner plate, on a woven placemat --- */
+.placemat {
+  background-color: var(--glass);
+  background-image: repeating-linear-gradient(90deg, rgba(96, 66, 36, 0.035) 0 2px, transparent 2px 6px),
+    repeating-linear-gradient(0deg, rgba(96, 66, 36, 0.03) 0 2px, transparent 2px 6px);
+}
+.ring.plate { width: 144px; height: 144px; filter: drop-shadow(0 8px 10px rgba(60, 40, 20, 0.22)); }
+.ring.plate .plate-base { fill: #fffdf9; stroke: rgba(96, 66, 36, 0.12); stroke-width: 1; }
+.ring.plate .plate-well { fill: #fbf6ee; stroke: rgba(96, 66, 36, 0.1); stroke-width: 1.5; }
+.ring.plate .track { stroke: rgba(96, 66, 36, 0.07); stroke-width: 10; }
+.ring.plate .value { stroke: var(--green); stroke-width: 10; }
+.ring.plate.over .value { stroke: var(--tomato); }
+.ring.plate .ring-label { color: #2b2118; }
+.ring.plate .ring-label span { color: #6b5a4a; }
+@media (prefers-color-scheme: dark) {
+  .ring.plate .plate-base { fill: #efe6da; }
+  .ring.plate .plate-well { fill: #e7dccd; }
+  .ring.plate .value { stroke: #2f7a4a; }
+}
+
+/* --- Our Fridge: a retro fridge door covered in magnets --- */
+body[data-screen="fridge"] { background: #cfe5d8; }
+body[data-screen="fridge"] .backdrop { display: none; }
+@media (prefers-color-scheme: dark) { body[data-screen="fridge"] { background: #1d2a24; } }
+.fridge-door {
+  position: relative; min-height: 50vh; padding: 18px 26px 22px 14px; border-radius: 30px;
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0) 45%), #dcefe3;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.7), inset 0 -3px 0 rgba(0, 0, 0, 0.06), 0 14px 30px -18px rgba(20, 60, 40, 0.5);
+}
+.fridge-door::after { /* chrome handle */
+  content: ""; position: absolute; right: 8px; top: 34px; width: 9px; height: 150px; border-radius: 6px;
+  background: linear-gradient(90deg, #9aa3a0, #f4f7f6 45%, #b8c0bd 70%, #7f8885);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+@media (prefers-color-scheme: dark) {
+  .fridge-door { background: linear-gradient(105deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 45%), #263830; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 14px 30px -18px rgba(0, 0, 0, 0.8); }
+}
+.magnets { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; }
+.magnet {
+  all: unset; box-sizing: border-box; cursor: pointer; position: relative;
+  display: flex; flex-direction: column; gap: 4px; min-height: 128px; padding: 12px 12px 10px;
+  border-radius: 18px; color: #2b2118;
+  transform: rotate(var(--tilt, 0deg));
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.14), 0 10px 18px -10px rgba(0, 0, 0, 0.45), inset 0 2px 0 rgba(255, 255, 255, 0.45);
+  transition: transform 0.25s var(--ease);
+  animation: enter 0.5s var(--ease) both;
+}
+.magnet:active { transform: rotate(0deg) scale(0.96); }
+.magnet b { font-size: 14px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.magnet-emoji { font-size: 32px; line-height: 1.1; }
+.magnet-kcal { font-size: 18px; margin-top: auto; }
+.magnet-kcal small { font-family: var(--font); font-size: 11px; font-weight: 600; opacity: 0.7; }
+.magnet-tag { position: absolute; top: 10px; right: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 6px; border-radius: 6px; background: rgba(255, 255, 255, 0.55); }
+.magnet-tag.est { background: rgba(43, 33, 24, 0.12); }
+.m0 { background: #ffd166; } .m1 { background: #f79a83; } .m2 { background: #9fd0ea; }
+.m3 { background: #cdb8f2; } .m4 { background: #ffb870; } .m5 { background: #f6a9c2; }
+
+/* --- Our Bar: a chalkboard menu in a wooden frame --- */
+body[data-screen="bar"] { background: #4a3527; }
+body[data-screen="bar"] .backdrop { display: none; }
+body[data-screen="bar"] main { --text: #f6ecdf; --text-2: #d9c6b0; --text-3: #b39d86; --field: rgba(255, 255, 255, 0.08); --line: rgba(255, 255, 255, 0.12); color: var(--text); }
+body[data-screen="bar"] .eyebrow { color: var(--butter); }
+@media (prefers-color-scheme: dark) { body[data-screen="bar"] { background: #2a1e16; } }
+.chalkboard {
+  position: relative; padding: 20px 18px 22px; border-radius: 10px;
+  border: 12px solid var(--wood-1);
+  border-image: linear-gradient(135deg, var(--wood-1), var(--wood-2) 40%, var(--wood-1) 60%, var(--wood-2)) 1;
+  background-color: var(--board);
+  background-image:
+    radial-gradient(ellipse at 20% 15%, rgba(255, 255, 255, 0.08), transparent 45%),
+    radial-gradient(ellipse at 80% 70%, rgba(255, 255, 255, 0.06), transparent 50%),
+    radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: auto, auto, 5px 5px;
+  box-shadow: 0 18px 30px -16px rgba(0, 0, 0, 0.7), inset 0 0 30px rgba(0, 0, 0, 0.35);
+  color: var(--chalk-ink);
+}
+.menu-item { padding: 10px 2px 12px; border-bottom: 1px dashed rgba(244, 241, 232, 0.18); cursor: pointer; }
+.menu-item:last-child { border-bottom: 0; }
+.menu-item:active { background: rgba(255, 255, 255, 0.05); }
+.menu-line { display: flex; align-items: baseline; gap: 6px; font-family: var(--chalk); font-size: 27px; line-height: 1.1; }
+.menu-name { flex: none; max-width: 70%; }
+.menu-dots { flex: 1; border-bottom: 3px dotted rgba(244, 241, 232, 0.45); transform: translateY(-6px); }
+.menu-kcal { flex: none; font-weight: 700; }
+.menu-kcal::after { content: " kcal"; font-size: 16px; opacity: 0.75; }
+.menu-sub { font-size: 13px; opacity: 0.72; margin-top: 2px; }
+.chalkboard .empty { color: var(--chalk-ink); font-family: var(--chalk); font-size: 24px; }
+
+/* --- Our Cookbook: recipe index cards on a wooden table --- */
+body[data-screen="cookbook"] {
+  background-color: #c79a6b;
+  background-image: repeating-linear-gradient(92deg, rgba(90, 55, 25, 0.10) 0 2px, transparent 2px 22px),
+    repeating-linear-gradient(88deg, rgba(255, 230, 200, 0.08) 0 1px, transparent 1px 37px);
+}
+body[data-screen="cookbook"] .backdrop { display: none; }
+body[data-screen="cookbook"] .page-head { --text: #2b1a0c; }
+body[data-screen="cookbook"] .page-head .eyebrow { color: #7a2a14; }
+@media (prefers-color-scheme: dark) {
+  body[data-screen="cookbook"] { background-color: #3b2a1d; }
+  body[data-screen="cookbook"] .page-head { --text: #f3e9dc; }
+  body[data-screen="cookbook"] .page-head .eyebrow { color: var(--butter); }
+}
+.recipe-box { display: flex; flex-direction: column; gap: 16px; }
+.recipe-card {
+  all: unset; box-sizing: border-box; cursor: pointer; display: block;
+  border-radius: 6px; overflow: hidden; color: #2b2118;
+  background: #fffbf3;
+  transform: rotate(var(--tilt, 0deg));
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.08), 0 14px 22px -14px rgba(40, 20, 5, 0.6);
+  transition: transform 0.25s var(--ease);
+  animation: enter 0.5s var(--ease) both;
+}
+.recipe-card:active { transform: rotate(0deg) scale(0.98); }
+.rc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 14px 16px 8px; border-bottom: 2px solid rgba(217, 72, 43, 0.55); }
+.rc-title { font-family: var(--chalk); font-size: 30px; font-weight: 700; line-height: 1; }
+.rc-kcal { font-size: 22px; white-space: nowrap; }
+.rc-kcal small { font-family: var(--font); font-size: 12px; font-weight: 600; margin-left: 3px; color: #6b5a4a; }
+.rc-body {
+  padding: 4px 16px 10px;
+  background-image: linear-gradient(transparent 27px, rgba(59, 127, 212, 0.25) 27px, rgba(59, 127, 212, 0.25) 28px, transparent 28px);
+  background-size: 100% 28px;
+}
+.rc-body p { margin: 0; min-height: 28px; line-height: 28px; font-size: 14px; color: #4b3b2c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* --- Reports: graph-paper notebook cards --- */
+body[data-screen="reports"] .card.glass {
+  background-image: linear-gradient(rgba(59, 127, 212, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(59, 127, 212, 0.05) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+/* --- Small touches --- */
+.seg { background: var(--track); }
+.seg button.active { background: var(--glass-strong); box-shadow: 0 2px 0 rgba(96, 66, 36, 0.12); }
+.input, select.input, textarea.input { background: var(--field); }
+.badge-label { background: var(--green-soft); }
+
+/* --- Fixes on top of the kitchen theme --- */
+.search svg { z-index: 1; }
+body[data-screen="bar"] .page-head .icon-btn { background: var(--butter); color: #2b2118; border-color: transparent; }
+.menu-name { flex: 0 1 auto; }
+.menu-dots { min-width: 18px; align-self: flex-end; transform: translateY(-8px); }
+.wrapped-banner {
+  background: linear-gradient(120deg, #d9482b, #e8873a 55%, #f2c14e);
+  box-shadow: 0 4px 0 rgba(120, 40, 10, 0.25), 0 12px 24px -12px rgba(217, 72, 43, 0.6);
+  animation: enter 0.5s var(--ease) both;
+}
+.wrapped-banner b { font-family: var(--serif); font-size: 18px; }
+.list li.tap { border-radius: 0; }
+.list .item-emoji { font-size: 24px; width: 32px; text-align: center; flex: none; }
