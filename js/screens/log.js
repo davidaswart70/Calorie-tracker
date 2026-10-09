@@ -177,9 +177,15 @@ export function openExerciseSheet(app, date = N.dateStr()) {
 /** One log entry as a list row (used on Home and in Reports). */
 export function logRow(l) {
   const ex = l.type === 'exercise';
-  const amount = ex ? `${fmt0(l.quantity)} min` : `${fmt1(l.quantity)} ${unitLabel(l.unit)}${l.unit === 'serving' && N.num(l.quantity) !== 1 ? 's' : ''}`;
+  const meal = l.type === 'meal';
+  // Meals are stored as "Name: item, item, …" — show the name as the title and the items underneath.
+  const split = meal ? String(l.name).indexOf(': ') : -1;
+  const title = split > 0 ? l.name.slice(0, split) : l.name;
+  const contents = split > 0 ? l.name.slice(split + 2) : '';
+  const amount = ex ? `${fmt0(l.quantity)} min` : meal ? 'Meal' : `${fmt1(l.quantity)} ${unitLabel(l.unit)}${l.unit === 'serving' && N.num(l.quantity) !== 1 ? 's' : ''}`;
   return `<li>
-    <div class="grow"><div class="title">${ex ? icon.flame.replace('width="24" height="24"', 'width="15" height="15"') + ' ' : ''}${esc(l.name)}</div>
+    <div class="grow"><div class="title">${ex ? icon.flame.replace('width="24" height="24"', 'width="15" height="15"') + ' ' : ''}${esc(title)}</div>
+      ${contents ? `<div class="sub">${esc(contents)}</div>` : ''}
       <div class="sub">${esc(amount)} · ${esc(l.time || '')} ${ex ? '' : sourceBadge(l.source)}</div></div>
     <div class="value num">${ex ? '−' : ''}${fmt0(l.kcal)} kcal<small>${kj(l.kcal)}</small></div>
     <button class="icon-btn plain" data-del="${esc(l.id)}" aria-label="Delete ${esc(l.name)}">${icon.trash}</button>

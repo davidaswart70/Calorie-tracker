@@ -74,14 +74,16 @@ window.addEventListener('beforeunload', (e) => {
  * Save without making the user wait: shows "Saving…" until Google Sheets confirms,
  * then a success message and fresh data, or an error saying it was not saved.
  */
-export function saveInBackground(app, action, successMessage) {
+export function saveInBackground(app, action, successMessage, onSaved = null) {
   pendingSaves++;
   toast('Saving…', 'pending');
   action()
-    .then(() => {
+    .then(async (result) => {
       pendingSaves--;
       toast(pendingSaves ? 'Saving…' : successMessage, pendingSaves ? 'pending' : 'ok');
-      app.refresh();
+      await app.refresh();
+      // Runs after the fresh data has loaded, e.g. to continue with the saved item.
+      onSaved?.(result);
     })
     .catch((err) => {
       pendingSaves--;

@@ -261,6 +261,7 @@ body.no-tabbar .tabbar { display: none; }
 .bar-fill.fat { background: var(--fat); }
 
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.actions .wide { grid-column: 1 / -1; }
 
 /* ---------- Lists ---------- */
 
