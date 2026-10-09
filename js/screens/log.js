@@ -1,6 +1,6 @@
 // Bottom sheets for logging food/drinks/recipes and exercise.
 import * as N from '../nutrition.js';
-import { esc, fmt0, fmt1, kcal, kj, macroLine, sourceBadge, openSheet, saving, seg, segValue, wireSegs, icon, unitLabel } from '../ui.js';
+import { esc, fmt0, fmt1, kcal, kj, macroLine, sourceBadge, openSheet, saveInBackground, seg, segValue, wireSegs, icon, unitLabel } from '../ui.js';
 
 const TYPE_LABEL = { food: 'Fridge', drink: 'Bar', recipe: 'Cookbook' };
 const round1 = (v) => Math.round(v * 10) / 10;
@@ -100,11 +100,12 @@ function showAmountForm(app, body, close, { type, item }, date) {
   qty.oninput = draw;
   draw();
 
-  body.querySelector('#log').onclick = async (e) => {
+  body.querySelector('#log').onclick = () => {
     const q = N.num(qty.value);
     if (q <= 0) return qty.focus();
     const n = calc();
-    const res = await saving(e.currentTarget, () => app.store.add('logs', {
+    close();
+    saveInBackground(app, () => app.store.add('logs', {
       date: body.querySelector('#date').value || N.dateStr(),
       time: nowTime(),
       type,
@@ -118,7 +119,6 @@ function showAmountForm(app, body, close, { type, item }, date) {
       fat: round1(n.fat),
       source: n.source,
     }), `Logged ${item.name}`);
-    if (res.ok) { close(); app.refresh(); }
   };
 }
 
@@ -154,10 +154,11 @@ export function openExerciseSheet(app, date = N.dateStr()) {
     ex.onchange = min.oninput = draw;
     draw();
 
-    body.querySelector('#log').onclick = async (e) => {
+    body.querySelector('#log').onclick = () => {
       const minutes = N.num(min.value);
       if (minutes <= 0) return min.focus();
-      const res = await saving(e.currentTarget, () => app.store.add('logs', {
+      close();
+    saveInBackground(app, () => app.store.add('logs', {
         date: body.querySelector('#date').value || N.dateStr(),
         time: nowTime(),
         type: 'exercise',
@@ -169,7 +170,6 @@ export function openExerciseSheet(app, date = N.dateStr()) {
         protein: '', carbs: '', fat: '',
         source: 'estimated',
       }), 'Exercise logged');
-      if (res.ok) { close(); app.refresh(); }
     };
   });
 }
@@ -188,10 +188,9 @@ export function logRow(l) {
 
 export function wireDeletes(container, app) {
   container.querySelectorAll('[data-del]').forEach((b) => {
-    b.onclick = async () => {
+    b.onclick = () => {
       if (!confirm('Delete this entry?')) return;
-      const res = await saving(null, () => app.store.remove('logs', b.dataset.del), 'Entry deleted');
-      if (res.ok) app.refresh();
+      saveInBackground(app, () => app.store.remove('logs', b.dataset.del), 'Entry deleted');
     };
   });
 }

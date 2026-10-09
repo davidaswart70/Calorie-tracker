@@ -1,6 +1,6 @@
 // Profile & goal: body details, activity level, goal picker and recommended calories.
 import * as N from '../nutrition.js';
-import { esc, fmt0, fmt1, kj, icon, seg, segValue, wireSegs, saving } from '../ui.js';
+import { esc, fmt0, fmt1, kj, icon, seg, segValue, wireSegs, saveInBackground } from '../ui.js';
 
 export function render(el, app) {
   const s = app.data.settings;
@@ -141,7 +141,7 @@ export function render(el, app) {
     if (confirm('Disconnect this device from your Google Sheet? Your data stays in the sheet; you can reconnect with the URL and passcode.')) app.disconnect();
   };
 
-  $('save').onclick = async (e) => {
+  $('save').onclick = () => {
     const p = profile();
     const values = {
       sex: p.sex,
@@ -156,11 +156,9 @@ export function render(el, app) {
     };
     const latest = N.latestWeight(app.data.weights);
     const newWeight = p.weightKg > 0 && (!latest || N.num(latest.weightKg) !== p.weightKg);
-    const res = await saving(e.currentTarget, async () => {
-      await app.store.saveSettings(values);
-      // A changed weight is also recorded in the weight log.
-      if (newWeight) await app.store.saveWeight(N.dateStr(), p.weightKg);
-    }, newWeight ? `Profile saved · ${fmt1(p.weightKg)} kg added to weight log` : 'Profile saved');
-    if (res.ok) app.refresh();
+    // A changed weight is also recorded in the weight log (same request).
+    saveInBackground(app,
+      () => app.store.saveSettings(values, newWeight ? { date: N.dateStr(), weightKg: p.weightKg } : null),
+      newWeight ? `Profile saved · ${fmt1(p.weightKg)} kg added to weight log` : 'Profile saved');
   };
 }

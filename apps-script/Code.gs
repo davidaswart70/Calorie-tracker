@@ -54,10 +54,26 @@ function doPost(e) {
   }
 
   try {
-    ensureTabs_();
-    const result = handle_(req);
+    headerCache_ = {};
+    if (req.action === 'load') ensureTabs_();
+    const result = handle_(req) || {};
     SpreadsheetApp.flush();
-    return json_(Object.assign({ ok: true, data: readAll_() }, result || {}));
+    const data = readAll_();
+    // Confirm the write by finding it in what we just read back from the sheet.
+    if (result.confirm) {
+      const row = data[result.confirm.table].find(function (r) { return r.id === String(result.confirm.id); });
+      if (!row) throw new Error('The save could not be confirmed in the spreadsheet.');
+      result.row = row;
+    }
+    if (result.confirmGone && data[result.confirmGone.table].some(function (r) { return r.id === String(result.confirmGone.id); })) {
+      throw new Error('The delete could not be confirmed in the spreadsheet.');
+    }
+    if (result.confirmSettings) {
+      Object.keys(result.confirmSettings).forEach(function (k) {
+        if (data.settings[k] !== result.confirmSettings[k]) throw new Error('Settings could not be confirmed in the spreadsheet.');
+      });
+    }
+    return json_({ ok: true, data: data, row: result.row });
   } catch (err) {
     return json_({ ok: false, error: String((err && err.message) || err) });
   } finally {
@@ -70,31 +86,33 @@ function handle_(req) {
     case 'load':
       return {};
     case 'add':
-      return { row: addRow_(req.table, req.row) };
+      return { confirm: { table: req.table, id: addRow_(req.table, req.row) } };
     case 'update':
-      return { row: updateRow_(req.table, req.id, req.row) };
+      return { confirm: { table: req.table, id: updateRow_(req.table, req.id, req.row) } };
     case 'remove':
       removeRow_(req.table, req.id);
-      return {};
-    case 'setIngredients':
-      setIngredients_(req.parentType, req.parentId, req.list || []);
-      return {};
+      return { confirmGone: { table: req.table, id: req.id } };
     case 'saveWithIngredients': {
-      const row = req.id ? updateRow_(req.table, req.id, req.row) : addRow_(req.table, req.row);
-      setIngredients_(req.parentType, row.id, req.list || []);
-      return { row: row };
+      const id = req.id ? updateRow_(req.table, req.id, req.row) : addRow_(req.table, req.row);
+      setIngredients_(req.parentType, id, req.list || []);
+      return { confirm: { table: req.table, id: id } };
     }
     case 'saveWeight':
-      return { row: saveWeight_(req.date, req.weightKg) };
-    case 'saveSettings':
-      saveSettings_(req.values || {});
-      return {};
+      return { confirm: { table: 'weights', id: saveWeight_(req.date, req.weightKg) } };
+    case 'saveSettings': {
+      // Optionally save a weight in the same request (the profile screen does this).
+      const res = { confirmSettings: saveSettings_(req.values || {}) };
+      if (req.weight) res.confirm = { table: 'weights', id: saveWeight_(req.weight.date, req.weight.weightKg) };
+      return res;
+    }
     default:
       throw new Error('Unknown action: ' + req.action);
   }
 }
 
 // ---------- Sheet helpers ----------
+
+let headerCache_ = {};
 
 function ss_() {
   return SpreadsheetApp.getActiveSpreadsheet();
@@ -124,15 +142,28 @@ function ensureTabs_() {
 }
 
 function sheet_(name) {
-  return ss_().getSheetByName(table_(name).tab);
+  return tab_(table_(name).tab);
+}
+
+/** Get a tab by name, recreating missing tabs if needed. */
+function tab_(tabName) {
+  let sh = ss_().getSheetByName(tabName);
+  if (!sh) {
+    ensureTabs_();
+    sh = ss_().getSheetByName(tabName);
+  }
+  return sh;
 }
 
 /** Header row → column index map (columns are matched by header name, so order doesn't matter). */
 function headers_(sh) {
+  const key = sh.getName();
+  if (headerCache_[key]) return headerCache_[key];
   const lastCol = Math.max(sh.getLastColumn(), 1);
   const row = sh.getRange(1, 1, 1, lastCol).getValues()[0];
   const map = {};
   row.forEach(function (h, i) { if (h !== '') map[String(h).trim()] = i; });
+  headerCache_[key] = map;
   return map;
 }
 
@@ -145,7 +176,8 @@ function readTable_(name) {
   const sh = sheet_(name);
   const values = sh.getDataRange().getValues();
   if (values.length < 2) return [];
-  const map = headers_(sh);
+  const map = {};
+  values[0].forEach(function (h, i) { if (h !== '') map[String(h).trim()] = i; });
   const cols = table_(name).cols;
   const out = [];
   for (let r = 1; r < values.length; r++) {
@@ -160,7 +192,7 @@ function readTable_(name) {
 }
 
 function readSettings_() {
-  const sh = ss_().getSheetByName(SETTINGS_TAB);
+  const sh = tab_(SETTINGS_TAB);
   const values = sh.getDataRange().getValues();
   const out = {};
   for (let r = 1; r < values.length; r++) {
@@ -185,10 +217,14 @@ function findRow_(sh, id) {
   return -1;
 }
 
-function rowValues_(sh, name, obj) {
+function width_(sh, name) {
+  return Math.max(sh.getLastColumn(), table_(name).cols.length);
+}
+
+/** Put the known columns of `obj` into a row array (other cells keep `base` values). */
+function fill_(sh, obj, base) {
   const map = headers_(sh);
-  const width = Math.max(sh.getLastColumn(), table_(name).cols.length);
-  const arr = new Array(width).fill('');
+  const arr = base.slice();
   Object.keys(obj).forEach(function (k) {
     if (map[k] !== undefined) arr[map[k]] = obj[k] == null ? '' : String(obj[k]);
   });
@@ -205,37 +241,42 @@ function now_() {
   return new Date().toISOString();
 }
 
-function readBack_(name, id) {
-  const row = readTable_(name).find(function (r) { return r.id === String(id); });
-  if (!row) throw new Error('The save could not be confirmed in the spreadsheet.');
-  return row;
-}
-
-function addRow_(name, row) {
-  const sh = sheet_(name);
+function newRow_(name, row) {
   const cols = table_(name).cols;
   const obj = clean_(name, row);
   obj.id = Utilities.getUuid().slice(0, 13);
   if (cols.indexOf('updatedAt') >= 0) obj.updatedAt = now_();
   if (cols.indexOf('createdAt') >= 0) obj.createdAt = now_();
-  const values = rowValues_(sh, name, obj);
-  const r = sh.getLastRow() + 1;
-  sh.getRange(r, 1, 1, values.length).setNumberFormat('@').setValues([values]);
-  return readBack_(name, obj.id);
+  return obj;
+}
+
+/** Append rows in one write. Returns the new ids. */
+function appendRows_(name, rows) {
+  if (!rows.length) return [];
+  const sh = sheet_(name);
+  const w = width_(sh, name);
+  const blank = new Array(w).fill('');
+  const objs = rows.map(function (r) { return newRow_(name, r); });
+  const values = objs.map(function (o) { return fill_(sh, o, blank); });
+  sh.getRange(sh.getLastRow() + 1, 1, values.length, w).setNumberFormat('@').setValues(values);
+  return objs.map(function (o) { return o.id; });
+}
+
+function addRow_(name, row) {
+  return appendRows_(name, [row])[0];
 }
 
 function updateRow_(name, id, changes) {
   const sh = sheet_(name);
   const r = findRow_(sh, id);
   if (r < 0) throw new Error('That item no longer exists in the spreadsheet.');
-  const map = headers_(sh);
   const obj = clean_(name, changes);
   delete obj.id;
   if (table_(name).cols.indexOf('updatedAt') >= 0) obj.updatedAt = now_();
-  Object.keys(obj).forEach(function (k) {
-    if (map[k] !== undefined) sh.getRange(r, map[k] + 1).setNumberFormat('@').setValue(obj[k] == null ? '' : String(obj[k]));
-  });
-  return readBack_(name, id);
+  const w = width_(sh, name);
+  const range = sh.getRange(r, 1, 1, w);
+  range.setNumberFormat('@').setValues([fill_(sh, obj, range.getValues()[0])]);
+  return String(id);
 }
 
 function removeRow_(name, id) {
@@ -244,25 +285,25 @@ function removeRow_(name, id) {
   if (r < 0) throw new Error('That item no longer exists in the spreadsheet.');
   sh.deleteRow(r);
   if (name === 'recipes' || name === 'drinks') setIngredients_(name === 'recipes' ? 'recipe' : 'drink', id, []);
-  if (findRow_(sh, id) > 0) throw new Error('The delete could not be confirmed in the spreadsheet.');
 }
 
+/** Replace a recipe's or drink's ingredients: rewrite the tab body in one go. */
 function setIngredients_(parentType, parentId, list) {
   const sh = sheet_('ingredients');
   const map = headers_(sh);
+  const w = width_(sh, 'ingredients');
   const last = sh.getLastRow();
-  if (last >= 2) {
-    const values = sh.getRange(2, 1, last - 1, sh.getLastColumn()).getValues();
-    // Delete from the bottom up so row numbers stay valid.
-    for (let i = values.length - 1; i >= 0; i--) {
-      if (String(values[i][map.parentType]) === String(parentType) && String(values[i][map.parentId]) === String(parentId)) {
-        sh.deleteRow(i + 2);
-      }
-    }
-  }
-  list.forEach(function (ing) {
-    addRow_('ingredients', Object.assign({}, ing, { parentType: parentType, parentId: parentId }));
+  const existing = last >= 2 ? sh.getRange(2, 1, last - 1, w).getValues() : [];
+  const kept = existing.filter(function (row) {
+    return !(String(row[map.parentType]) === String(parentType) && String(row[map.parentId]) === String(parentId));
   });
+  const blank = new Array(w).fill('');
+  const added = list.map(function (ing) {
+    return fill_(sh, newRow_('ingredients', Object.assign({}, ing, { parentType: parentType, parentId: parentId })), blank);
+  });
+  const rows = kept.concat(added);
+  if (existing.length) sh.getRange(2, 1, existing.length, w).clearContent();
+  if (rows.length) sh.getRange(2, 1, rows.length, w).setNumberFormat('@').setValues(rows);
 }
 
 function saveWeight_(date, weightKg) {
@@ -272,24 +313,20 @@ function saveWeight_(date, weightKg) {
     : addRow_('weights', { date: date, weightKg: weightKg });
 }
 
+/** Upsert key/value pairs in one write. Returns the values to confirm. */
 function saveSettings_(values) {
-  const sh = ss_().getSheetByName(SETTINGS_TAB);
+  const sh = tab_(SETTINGS_TAB);
   const last = sh.getLastRow();
-  const keys = last >= 2 ? sh.getRange(2, 1, last - 1, 1).getValues().map(function (r) { return String(r[0]); }) : [];
+  const rows = last >= 2 ? sh.getRange(2, 1, last - 1, 2).getValues() : [];
+  const expected = {};
   Object.keys(values).forEach(function (k) {
     const v = values[k] == null ? '' : String(values[k]);
-    const i = keys.indexOf(k);
-    if (i >= 0) {
-      sh.getRange(i + 2, 2).setNumberFormat('@').setValue(v);
-    } else {
-      sh.getRange(sh.getLastRow() + 1, 1, 1, 2).setNumberFormat('@').setValues([[k, v]]);
-      keys.push(k);
-    }
+    expected[k] = v;
+    const row = rows.find(function (r) { return String(r[0]) === k; });
+    if (row) row[1] = v; else rows.push([k, v]);
   });
-  const saved = readSettings_();
-  Object.keys(values).forEach(function (k) {
-    if (saved[k] !== (values[k] == null ? '' : String(values[k]))) throw new Error('Settings could not be confirmed in the spreadsheet.');
-  });
+  if (rows.length) sh.getRange(2, 1, rows.length, 2).setNumberFormat('@').setValues(rows);
+  return expected;
 }
 
 function json_(obj) {

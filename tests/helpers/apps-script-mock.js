@@ -51,6 +51,10 @@ class Range {
     return this;
   }
   setValue(v) { this.sheet.set(this.row, this.col, v); return this; }
+  clearContent() {
+    for (let r = 0; r < this.numRows; r++) for (let c = 0; c < this.numCols; c++) this.sheet.set(this.row + r, this.col + c, '');
+    return this;
+  }
   setNumberFormat() { return this; }
   setFontWeight() { return this; }
 }
