@@ -7,7 +7,7 @@ import { esc, icon } from '../ui.js';
  * `rows` = [{ itemType, itemId, quantity, unit }]. `exclude` = { type, id } to leave out (the item itself).
  * Returns { get(): rows } and calls onChange() on every edit.
  */
-export function ingredientEditor(el, app, rows, { exclude = null, onChange = () => {} } = {}) {
+export function ingredientEditor(el, app, rows, { exclude = null, onChange = () => {}, addLabel = 'Add ingredient' } = {}) {
   const { foods, drinks } = app.data;
   const options = [
     ...foods.map((f) => ({ key: `food:${f.id}`, type: 'food', item: f })),
@@ -45,7 +45,7 @@ export function ingredientEditor(el, app, rows, { exclude = null, onChange = () 
           </div>`;
         }).join('')}
       </div>
-      <button type="button" class="btn ghost small" data-add style="margin-top:10px">${icon.plus} Add ingredient</button>`;
+      <button type="button" class="btn ghost small" data-add style="margin-top:10px">${icon.plus} ${esc(addLabel)}</button>`;
 
     el.querySelectorAll('.ing-row').forEach((row) => {
       const r = list[row.dataset.i];

@@ -2,6 +2,7 @@
 import * as N from '../nutrition.js';
 import { esc, fmt0, kj, icon, prettyDate } from '../ui.js';
 import { openLogSheet, openExerciseSheet, logRow, wireDeletes } from './log.js';
+import { openMealSheet } from './meal.js';
 
 export function render(el, app) {
   const today = N.dateStr();
@@ -17,7 +18,8 @@ export function render(el, app) {
     ${target.kcal ? hero(day, target) : setupCard(day)}
     <div class="actions">
       <button class="btn" id="log-food">${icon.plus} Food or drink</button>
-      <button class="btn secondary" id="log-ex">${icon.flame} Exercise</button>
+      <button class="btn" id="log-meal">${icon.plus} Meal</button>
+      <button class="btn secondary wide" id="log-ex">${icon.flame} Exercise</button>
     </div>
     <section class="card glass">
       <h2>Macros</h2>
@@ -32,6 +34,7 @@ export function render(el, app) {
     </section>`;
 
   el.querySelector('#log-food').onclick = () => openLogSheet(app);
+  el.querySelector('#log-meal').onclick = () => openMealSheet(app);
   el.querySelector('#log-ex').onclick = () => openExerciseSheet(app);
   wireDeletes(el, app);
 

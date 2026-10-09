@@ -59,7 +59,8 @@ export function render(el, app, type) {
   }
 }
 
-function openItemForm(app, type, item = null, presetName = '') {
+/** Add or edit a food/drink. `onSaved(savedRow)` runs once the save is confirmed (used by the meal form). */
+export function openItemForm(app, type, item = null, presetName = '', onSaved = null) {
   const cfg = CONFIG[type];
   const isNew = !item;
   const v = item || { name: presetName, unit: cfg.defaultUnit, servingSize: '', kcal: '', protein: '', carbs: '', fat: '', source: 'label', notes: '' };
@@ -175,7 +176,7 @@ function openItemForm(app, type, item = null, presetName = '') {
       saveInBackground(app, () => {
         if (type === 'drink') return app.store.saveWithIngredients(cfg.table, item?.id || null, vals, 'drink', composite ? ings : []);
         return isNew ? app.store.add(cfg.table, vals) : app.store.update(cfg.table, item.id, vals);
-      }, `Saved ${vals.name}`);
+      }, `Saved ${vals.name}`, onSaved);
     };
 
     $('log')?.addEventListener('click', () => { close(); setTimeout(() => openLogSheet(app, { type, item }), 320); });
