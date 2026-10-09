@@ -118,6 +118,33 @@ test('period report, macro energy split, running total and weight rate', () => {
   assert.equal(N.weightRate([{ date: '2026-10-01', weightKg: 86 }]), null);
 });
 
+test('real maintenance from intake and weight trend', () => {
+  const settings = { sex: 'male', age: '40', heightCm: '180', weightKg: '85', activityLevel: 'moderate', goal: 'lose' };
+  const logs = [];
+  for (let i = 0; i < 21; i++) logs.push({ date: N.addDays('2026-10-21', -i), time: '12:00', type: 'food', name: 'x', kcal: 2000 });
+  // 1 kg lost over 21 days → rate −1/3 kg/week → maintenance = 2000 + (1/21) × 7700 ≈ 2367
+  const weights = [{ date: '2026-10-01', weightKg: 86 }, { date: '2026-10-21', weightKg: 85 }];
+  const r = N.realMaintenance(logs, weights, settings, '2026-10-21');
+  assert.equal(r.ready, true);
+  close(r.maintenance, 2000 + (1 / 20) * 7700, 1);
+  assert.equal(r.suggested, N.roundTo(r.maintenance - 550, 10));
+  assert.equal(N.realMaintenance(logs, [weights[1]], settings, '2026-10-21').reason, 'weights');
+  assert.equal(N.realMaintenance(logs.slice(0, 5), weights, settings, '2026-10-21').reason, 'logs');
+});
+
+test('streaks: current (alive if today not logged yet) and best', () => {
+  const settings = { sex: 'male', age: '40', heightCm: '180', weightKg: '85', activityLevel: 'moderate', goal: 'lose', calorieTarget: '2000' };
+  const day = (date, kcal, protein = 0) => ({ date, time: '12:00', type: 'food', name: 'x', kcal, protein });
+  const logs = [
+    day('2026-10-01', 1800), day('2026-10-02', 1900), day('2026-10-03', 2500), day('2026-10-04', 1500),
+    day('2026-10-06', 1500), day('2026-10-07', 1500), day('2026-10-08', 1600),
+  ];
+  const s = N.streaks(logs, settings, '2026-10-09');
+  assert.deepEqual(s.logging, { current: 3, best: 4 });
+  assert.deepEqual(s.onTarget, { current: 3, best: 3 });
+  assert.deepEqual(s.protein, { current: 0, best: 0 });
+});
+
 test('exercise uses net MET', () => {
   close(N.exerciseKcal(7, 85, 60), 510);
   assert.equal(N.exerciseKcal(0.5, 85, 60), 0);

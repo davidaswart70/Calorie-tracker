@@ -1,6 +1,7 @@
 // Profile & goal: body details, activity level, goal picker and recommended calories.
 import * as N from '../nutrition.js';
 import { esc, fmt0, fmt1, kj, icon, seg, segValue, wireSegs, saveInBackground } from '../ui.js';
+import { maintenanceCard, wireMaintenanceCard } from './maintenance.js';
 
 export function render(el, app) {
   const s = app.data.settings;
@@ -41,6 +42,8 @@ export function render(el, app) {
     </section>
 
     <section class="card glass" id="result"></section>
+
+    ${maintenanceCard(app)}
 
     <section class="card glass stack">
       <h2>Daily target</h2>
@@ -129,6 +132,7 @@ export function render(el, app) {
   }
 
   wireSegs(el, draw);
+  wireMaintenanceCard(el, app);
   ['age', 'height', 'weight', 'bodyfat'].forEach((id) => ($(id).oninput = draw));
   $('activity').querySelectorAll('.choice').forEach((b) => (b.onclick = () => {
     activity = b.dataset.id;
