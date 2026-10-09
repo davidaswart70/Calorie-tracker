@@ -68,11 +68,9 @@ function openRecipeForm(app, recipe = null) {
       if (vals.servings <= 0) return $('servings').focus();
       const ings = editor.get();
       if (!ings.length) return alert('Add at least one ingredient.');
-      const res = await saving(e.currentTarget, async () => {
-        const saved = isNew ? await app.store.add('recipes', vals) : await app.store.update('recipes', recipe.id, vals);
-        await app.store.setIngredients('recipe', saved.id, ings);
-        return saved;
-      }, `Saved ${vals.name}`);
+      const res = await saving(e.currentTarget,
+        () => app.store.saveWithIngredients('recipes', recipe?.id || null, vals, 'recipe', ings),
+        `Saved ${vals.name}`);
       if (res.ok) { close(); app.refresh(); }
     };
 

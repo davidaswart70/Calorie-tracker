@@ -1,124 +1,101 @@
-// Data storage.
+// Data storage: Google Sheets, through the Apps Script web app in apps-script/Code.gs.
 //
-// For now everything is saved in this browser's localStorage.
-// The tables mirror the planned Google Sheets tabs, and every function is async,
-// so this file can later be swapped for a Google Sheets version without changing the screens.
+// The web app URL and passcode are entered in the app and kept on this device only
+// (never in the code). Every write is confirmed by the spreadsheet, and each response
+// carries all data, so the app always shows what is actually in the sheet.
 
-const KEY = 'calorie-tracker-data-v1';
+const CONFIG_KEY = 'calorie-tracker-connection';
 
-// Table name → columns (the future Google Sheets tab headers).
-export const SCHEMA = {
-  foods: ['id', 'name', 'unit', 'servingSize', 'kcal', 'protein', 'carbs', 'fat', 'source', 'notes', 'updatedAt'],
-  drinks: ['id', 'name', 'unit', 'servingSize', 'kcal', 'protein', 'carbs', 'fat', 'source', 'notes', 'updatedAt'],
-  recipes: ['id', 'name', 'servings', 'notes', 'updatedAt'],
-  ingredients: ['id', 'parentType', 'parentId', 'itemType', 'itemId', 'quantity', 'unit'],
-  logs: ['id', 'date', 'time', 'type', 'itemId', 'name', 'quantity', 'unit', 'kcal', 'protein', 'carbs', 'fat', 'source', 'createdAt'],
-  weights: ['id', 'date', 'weightKg', 'createdAt'],
-};
+// ---------- Connection settings (this device only) ----------
 
-function empty() {
-  const data = { settings: {} };
-  for (const t of Object.keys(SCHEMA)) data[t] = [];
-  return data;
-}
-
-function read() {
+export function getConnection() {
   try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? { ...empty(), ...JSON.parse(raw) } : empty();
+    const c = JSON.parse(localStorage.getItem(CONFIG_KEY) || 'null');
+    return c && c.url && c.passcode ? c : null;
   } catch {
-    return empty();
+    return null;
   }
 }
 
-function write(data) {
+export function setConnection(url, passcode) {
+  localStorage.setItem(CONFIG_KEY, JSON.stringify({ url: url.trim(), passcode }));
+}
+
+export function clearConnection() {
+  try { localStorage.removeItem(CONFIG_KEY); } catch { /* ignore */ }
+  latest = null;
+}
+
+// ---------- Requests ----------
+
+let latest = null; // data from the most recent successful response
+
+async function call(action, params = {}, conn = getConnection()) {
+  if (!conn) throw new Error('Not connected to Google Sheets.');
+  const isWrite = action !== 'load';
+  let res;
   try {
-    localStorage.setItem(KEY, JSON.stringify(data));
-  } catch (err) {
-    throw new Error('Could not save to this device’s storage. Nothing was saved.');
+    // A plain-text body keeps this a "simple" request, which Apps Script accepts from any site.
+    res = await fetch(conn.url, { method: 'POST', body: JSON.stringify({ passcode: conn.passcode, action, ...params }) });
+  } catch {
+    throw new Error(isWrite
+      ? 'Could not reach Google Sheets, so the save was not confirmed. Check your connection, then reopen the app to see what was saved.'
+      : 'Could not reach Google Sheets. Check your internet connection.');
   }
-  // Read back to confirm the write really happened.
-  if (localStorage.getItem(KEY) !== JSON.stringify(data)) {
-    throw new Error('Save could not be confirmed. Nothing was saved.');
+  let body;
+  try {
+    body = await res.json();
+  } catch {
+    throw new Error(isWrite
+      ? 'Google Sheets sent an unexpected reply, so the save was not confirmed. Reopen the app to see what was saved.'
+      : 'Google Sheets sent an unexpected reply. Check the web app URL.');
   }
+  if (!body.ok) throw new Error(isWrite ? `Not saved: ${body.error}` : body.error);
+  latest = body.data;
+  return body;
 }
 
-const newId = () =>
-  (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`).slice(0, 13);
-
-function clean(table, row) {
-  const out = {};
-  for (const col of SCHEMA[table]) if (col in row) out[col] = row[col] ?? '';
-  return out;
+/** Check a URL + passcode before saving them. */
+export async function testConnection(url, passcode) {
+  await call('load', {}, { url: url.trim(), passcode });
 }
 
-function check(table) {
-  if (!SCHEMA[table]) throw new Error(`Unknown table: ${table}`);
-}
+// ---------- Data API used by the screens ----------
 
-/** Load everything. */
+/** All data. Uses the data returned by the last write if there is one, otherwise fetches. */
 export async function load() {
-  return read();
+  if (latest) {
+    const data = latest;
+    latest = null;
+    return data;
+  }
+  const body = await call('load');
+  latest = null;
+  return body.data;
 }
 
-/** Add a row; returns the saved row (with id). */
 export async function add(table, row) {
-  check(table);
-  const data = read();
-  const saved = { ...clean(table, row), id: newId() };
-  if (SCHEMA[table].includes('updatedAt')) saved.updatedAt = new Date().toISOString();
-  if (SCHEMA[table].includes('createdAt')) saved.createdAt = new Date().toISOString();
-  data[table].push(saved);
-  write(data);
-  return saved;
+  return (await call('add', { table, row })).row;
 }
 
-/** Update a row by id; returns the saved row. */
-export async function update(table, id, changes) {
-  check(table);
-  const data = read();
-  const i = data[table].findIndex((r) => r.id === id);
-  if (i < 0) throw new Error('That item no longer exists.');
-  const saved = { ...data[table][i], ...clean(table, changes), id };
-  if (SCHEMA[table].includes('updatedAt')) saved.updatedAt = new Date().toISOString();
-  data[table][i] = saved;
-  write(data);
-  return saved;
+export async function update(table, id, row) {
+  return (await call('update', { table, id, row })).row;
 }
 
-/** Delete a row by id (also removes ingredients belonging to a recipe/drink). */
 export async function remove(table, id) {
-  check(table);
-  const data = read();
-  data[table] = data[table].filter((r) => r.id !== id);
-  if (table === 'recipes' || table === 'drinks') {
-    const type = table === 'recipes' ? 'recipe' : 'drink';
-    data.ingredients = data.ingredients.filter((i) => !(i.parentType === type && i.parentId === id));
-  }
-  write(data);
+  await call('remove', { table, id });
 }
 
-/** Replace all ingredients of a recipe or drink. */
-export async function setIngredients(parentType, parentId, list) {
-  const data = read();
-  data.ingredients = data.ingredients.filter((i) => !(i.parentType === parentType && i.parentId === parentId));
-  for (const ing of list) {
-    data.ingredients.push({ ...clean('ingredients', ing), id: newId(), parentType, parentId });
-  }
-  write(data);
+/** Save a recipe or drink together with its ingredients in one request. `id` is null for new items. */
+export async function saveWithIngredients(table, id, row, parentType, list) {
+  return (await call('saveWithIngredients', { table, id, row, parentType, list })).row;
 }
 
 /** Save a weight; replaces any existing entry for the same date. */
 export async function saveWeight(date, weightKg) {
-  const existing = read().weights.find((w) => w.date === date);
-  return existing ? update('weights', existing.id, { weightKg }) : add('weights', { date, weightKg });
+  return (await call('saveWeight', { date, weightKg })).row;
 }
 
-/** Merge key/value pairs into settings. */
 export async function saveSettings(values) {
-  const data = read();
-  data.settings = { ...data.settings };
-  for (const [k, v] of Object.entries(values)) data.settings[k] = v == null ? '' : String(v);
-  write(data);
-  return data.settings;
+  await call('saveSettings', { values });
 }
