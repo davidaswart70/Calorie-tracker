@@ -34,7 +34,9 @@ export function ingredientEditor(el, app, rows, { exclude = null, onChange = () 
     return o ? N.unitsFor(app.data, o.type, o.item) : ['g'];
   };
 
-  let picking = -1; // index of the row whose search picker is open
+  // Index of the row whose search picker is open; a new, empty list starts with it open.
+  let picking = list.length && list.every((r) => !r.itemId) ? 0 : -1;
+  let focusSearch = false;
 
   function pickerResults(query) {
     const words = query.toLowerCase().split(/\s+/).filter(Boolean);
@@ -57,7 +59,7 @@ export function ingredientEditor(el, app, rows, { exclude = null, onChange = () 
           const key = r.itemId ? `${r.itemType}:${r.itemId}` : '';
           const name = key ? (byKey.get(key)?.item.name ?? '(deleted item)') : '';
           return `<div class="ing-row" data-i="${i}">
-            <button type="button" class="input pick ${name ? '' : 'empty'}" data-f="item" aria-expanded="${i === picking}">${name ? esc(name) : 'Choose…'}</button>
+            <button type="button" class="input pick ${name ? '' : 'empty'}" data-f="item" aria-expanded="${i === picking}">${name ? esc(name) : `${icon.search} Search…`}</button>
             <input class="input num" data-f="quantity" inputmode="decimal" value="${esc(r.quantity)}" placeholder="Qty">
             <select class="input" data-f="unit">${unitsFor(key).map((u) => `<option ${u === r.unit ? 'selected' : ''}>${u}</option>`).join('')}</select>
             <button type="button" class="icon-btn plain" data-remove aria-label="Remove ingredient">${icon.close}</button>
@@ -73,7 +75,7 @@ export function ingredientEditor(el, app, rows, { exclude = null, onChange = () 
     el.querySelectorAll('.ing-row').forEach((row) => {
       const i = Number(row.dataset.i);
       const r = list[i];
-      row.querySelector('[data-f="item"]').onclick = () => { picking = picking === i ? -1 : i; draw(); };
+      row.querySelector('[data-f="item"]').onclick = () => { picking = picking === i ? -1 : i; focusSearch = true; draw(); };
       row.querySelector('[data-f="quantity"]').oninput = (e) => { r.quantity = e.target.value; onChange(); };
       row.querySelector('[data-f="unit"]').onchange = (e) => { r.unit = e.target.value; onChange(); };
       row.querySelector('[data-remove]').onclick = () => { list.splice(i, 1); picking = -1; draw(); onChange(); };
@@ -97,12 +99,16 @@ export function ingredientEditor(el, app, rows, { exclude = null, onChange = () 
         draw(); onChange();
         el.querySelector(`.ing-row[data-i="${done}"] [data-f="quantity"]`)?.focus();
       };
-      search.focus({ preventScroll: true });
-      picker.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      // Only focus (and pop up the keyboard) after a tap, not when the sheet first opens.
+      if (focusSearch) {
+        search.focus({ preventScroll: true });
+        picker.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
     }
     el.querySelector('[data-add]').onclick = () => {
       list.push({ itemType: '', itemId: '', quantity: '', unit: 'g' });
       picking = list.length - 1;
+      focusSearch = true;
       draw();
     };
   }
