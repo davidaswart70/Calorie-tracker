@@ -54,6 +54,7 @@ html[data-theme="glass"] .card.glass > * { position: relative; z-index: 1; }
 html[data-theme="glass"] .choice.active { border-color: var(--green) !important; background: rgba(76, 217, 138, 0.22) !important; }
 html[data-theme="glass"] .input::placeholder { color: rgba(255, 255, 255, 0.5); }
 html[data-theme="glass"] select.input option { color: #111; }
+html[data-theme="glass"] .ing-row .pick.empty { color: rgba(255, 255, 255, 0.5) !important; }
 
 /* Type: Apple-style bold sans */
 html[data-theme="glass"] :is(.page-head h1, .card h2, .sheet-head h2, .celebrate-card h2, .ring-label strong, .ring-center strong,

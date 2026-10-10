@@ -395,6 +395,16 @@ textarea.input { min-height: 70px; resize: vertical; }
 .ing-row .input { min-height: 42px; padding: 8px 10px; }
 .ing-row select.input { padding-right: 26px; background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%; }
 .ing-row .icon-btn { width: 36px; height: 36px; }
+.ing-row .pick { text-align: left; font: inherit; color: var(--text); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
+.ing-row .pick.empty { color: var(--text-3); }
+.ing-row .pick[aria-expanded="true"] { border-color: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
+.picker { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--glass-strong); animation: pickIn 0.2s var(--ease); }
+.pick-list { max-height: 248px; overflow-y: auto; overscroll-behavior: contain; margin: 0 -4px; }
+.pick-group { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); padding: 8px 8px 4px; }
+.pick-item { display: block; width: 100%; text-align: left; font: inherit; color: var(--text); background: none; border: 0; border-radius: var(--r-sm); padding: 10px 8px; cursor: pointer; }
+.pick-item:active, .pick-item:hover { background: var(--green-soft); }
+.pick-empty { margin: 6px 8px; }
+@keyframes pickIn { from { opacity: 0; transform: translateY(-4px); } }
 
 /* ---------- Bottom sheet ---------- */
 

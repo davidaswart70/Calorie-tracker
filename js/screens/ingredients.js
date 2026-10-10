@@ -20,18 +20,31 @@ export function ingredientEditor(el, app, rows, { exclude = null, onChange = () 
   const inDrinks = new Set(drinkFirst
     ? (app.data.ingredients || []).filter((i) => i.parentType === 'drink').map((i) => `${i.itemType}:${i.itemId}`)
     : []);
-  const group = (label, list, selected) => (list.length ? `<optgroup label="${label}">${list.map((o) => opt(o, selected)).join('')}</optgroup>` : '');
-  const optionHtml = (selected) => `
-    <option value="">Choose…</option>
-    ${group('Drink ingredients', options.filter((o) => inDrinks.has(o.key)), selected)}
-    ${group('Our Fridge', options.filter((o) => o.type === 'food' && !inDrinks.has(o.key)), selected)}
-    ${group('Our Bar', options.filter((o) => o.type === 'drink' && !inDrinks.has(o.key)), selected)}`;
-  const opt = (o, selected) => `<option value="${esc(o.key)}" ${o.key === selected ? 'selected' : ''}>${esc(o.item.name)}</option>`;
+  const groups = [
+    ['Drink ingredients', (o) => inDrinks.has(o.key)],
+    ['Our Fridge', (o) => o.type === 'food' && !inDrinks.has(o.key)],
+    ['Our Bar', (o) => o.type === 'drink' && !inDrinks.has(o.key)],
+  ];
+  const byName = (a, b) => a.item.name.localeCompare(b.item.name);
+  // Every word typed must appear in the name ("milk free" finds "Fat-free milk").
+  const matches = (o, words) => words.every((w) => o.item.name.toLowerCase().includes(w));
 
   const unitsFor = (key) => {
     const o = byKey.get(key);
     return o ? N.unitsFor(app.data, o.type, o.item) : ['g'];
   };
+
+  let picking = -1; // index of the row whose search picker is open
+
+  function pickerResults(query) {
+    const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+    const html = groups.map(([label, test]) => {
+      const found = options.filter((o) => test(o) && matches(o, words)).sort(byName);
+      return found.length ? `<div class="pick-group">${label}</div>${found.map((o) =>
+        `<button type="button" class="pick-item" data-key="${esc(o.key)}">${esc(o.item.name)}</button>`).join('')}` : '';
+    }).join('');
+    return html || '<p class="small muted pick-empty">Nothing found. Use “New food” or “New drink” to add it.</p>';
+  }
 
   function draw() {
     if (!options.length) {
@@ -42,31 +55,56 @@ export function ingredientEditor(el, app, rows, { exclude = null, onChange = () 
       <div class="stack">
         ${list.map((r, i) => {
           const key = r.itemId ? `${r.itemType}:${r.itemId}` : '';
-          const missing = key && !byKey.has(key);
+          const name = key ? (byKey.get(key)?.item.name ?? '(deleted item)') : '';
           return `<div class="ing-row" data-i="${i}">
-            <select class="input" data-f="item">${missing ? '<option value="" selected>(deleted item)</option>' : ''}${optionHtml(key)}</select>
+            <button type="button" class="input pick ${name ? '' : 'empty'}" data-f="item" aria-expanded="${i === picking}">${name ? esc(name) : 'Choose…'}</button>
             <input class="input num" data-f="quantity" inputmode="decimal" value="${esc(r.quantity)}" placeholder="Qty">
             <select class="input" data-f="unit">${unitsFor(key).map((u) => `<option ${u === r.unit ? 'selected' : ''}>${u}</option>`).join('')}</select>
             <button type="button" class="icon-btn plain" data-remove aria-label="Remove ingredient">${icon.close}</button>
-          </div>`;
+          </div>${i === picking ? `
+          <div class="picker">
+            <label class="search">${icon.search}<input class="input" data-search type="search" placeholder="Search ingredients" autocomplete="off" enterkeyhint="search"></label>
+            <div class="pick-list">${pickerResults('')}</div>
+          </div>` : ''}`;
         }).join('')}
       </div>
       <button type="button" class="btn ghost small" data-add style="margin-top:10px">${icon.plus} ${esc(addLabel)}</button>`;
 
     el.querySelectorAll('.ing-row').forEach((row) => {
-      const r = list[row.dataset.i];
-      row.querySelector('[data-f="item"]').onchange = (e) => {
-        const [type, id] = e.target.value.split(':');
-        r.itemType = type; r.itemId = id;
-        const units = unitsFor(e.target.value);
-        if (!units.includes(r.unit)) r.unit = units[0];
-        draw(); onChange();
-      };
+      const i = Number(row.dataset.i);
+      const r = list[i];
+      row.querySelector('[data-f="item"]').onclick = () => { picking = picking === i ? -1 : i; draw(); };
       row.querySelector('[data-f="quantity"]').oninput = (e) => { r.quantity = e.target.value; onChange(); };
       row.querySelector('[data-f="unit"]').onchange = (e) => { r.unit = e.target.value; onChange(); };
-      row.querySelector('[data-remove]').onclick = () => { list.splice(row.dataset.i, 1); draw(); onChange(); };
+      row.querySelector('[data-remove]').onclick = () => { list.splice(i, 1); picking = -1; draw(); onChange(); };
     });
-    el.querySelector('[data-add]').onclick = () => { list.push({ itemType: '', itemId: '', quantity: '', unit: 'g' }); draw(); };
+
+    const picker = el.querySelector('.picker');
+    if (picker) {
+      const r = list[picking];
+      const search = picker.querySelector('[data-search]');
+      const results = picker.querySelector('.pick-list');
+      search.oninput = () => { results.innerHTML = pickerResults(search.value); };
+      results.onclick = (e) => {
+        const b = e.target.closest('.pick-item');
+        if (!b) return;
+        const [type, id] = b.dataset.key.split(':');
+        r.itemType = type; r.itemId = id;
+        const units = unitsFor(b.dataset.key);
+        if (!units.includes(r.unit)) r.unit = units[0];
+        const done = picking;
+        picking = -1;
+        draw(); onChange();
+        el.querySelector(`.ing-row[data-i="${done}"] [data-f="quantity"]`)?.focus();
+      };
+      search.focus({ preventScroll: true });
+      picker.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    el.querySelector('[data-add]').onclick = () => {
+      list.push({ itemType: '', itemId: '', quantity: '', unit: 'g' });
+      picking = list.length - 1;
+      draw();
+    };
   }
   draw();
 
