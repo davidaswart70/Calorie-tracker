@@ -1,7 +1,7 @@
 // Log a one-off meal or drink made of several Fridge/Bar items,
 // optionally saving it as a recipe (meal) or to Our Bar (drink).
 import * as N from '../nutrition.js';
-import { esc, fmt1, kcal, kj, macroLine, sourceBadge, openSheet, saveInBackground, icon } from '../ui.js';
+import { esc, fmt0, fmt1, kcal, kj, macroLine, sourceBadge, openSheet, saveInBackground, icon } from '../ui.js';
 import { ingredientEditor, previewTotals } from './ingredients.js';
 import { openItemForm } from './items.js';
 
@@ -67,19 +67,37 @@ export function openMealSheet(app, date = N.dateStr(), mode = 'meal') {
       return { name: $('name').value.trim(), date: $('date').value || N.dateStr(), rows: editor.get(), saveRecipe: $('recipe').checked };
     }
 
+    // What's left of the day's target, before and after this meal.
+    function budget(t) {
+      const target = N.dailyTarget(app.data.settings);
+      if (!target.kcal) return '';
+      const date = $('date').value || N.dateStr();
+      const day = N.dayTotals(app.data.logs, date);
+      const before = target.kcal + (target.addExercise ? day.burned : 0) - day.eaten.kcal;
+      const after = before - (t ? t.kcal : 0);
+      const proteinGoal = target.macros?.protein || 0;
+      const proteinAfter = proteinGoal - day.eaten.protein - (t ? t.protein : 0);
+      const when = date === N.dateStr() ? 'today' : 'that day';
+      const kcalText = after >= 0 ? `<b>${fmt0(after)} kcal</b> left` : `<b class="over">${fmt0(-after)} kcal</b> over`;
+      return `<div class="budget small num">
+        ${t ? `After this ${M.noun}: ${kcalText} ${when}` : `You have <b>${fmt0(before)} kcal</b> left ${when}`}${proteinGoal ? ` · ${fmt0(Math.max(0, t ? proteinAfter : proteinGoal - day.eaten.protein))} g protein to go` : ''}</div>`;
+    }
+
     function draw() {
       const rows = editor.get();
       if (!rows.length) {
-        $('preview').innerHTML = '<div class="small muted">Add items to see the total.</div>';
+        $('preview').innerHTML = `<div class="small muted">Add items to see the total.</div>${budget(null)}`;
         return;
       }
       const t = previewTotals(app, rows);
       $('preview').innerHTML = `
         <div class="row"><div class="grow"><div class="small muted">This ${M.noun}</div>
           <div class="big num">${kcal(t.kcal)}</div>
-          <div class="small muted num">${kj(t.kcal)} · ${macroLine(t)}</div></div>${sourceBadge(t.source)}</div>`;
+          <div class="small muted num">${kj(t.kcal)} · ${macroLine(t)}</div></div>${sourceBadge(t.source)}</div>
+        ${budget(t)}`;
     }
     draw();
+    $('date').addEventListener('change', draw);
 
     $('restart')?.addEventListener('click', () => { app.state[draftKey] = null; close(); setTimeout(() => openMealSheet(app, date, mode), 320); });
 
