@@ -1,6 +1,6 @@
 // App entry point: loads data, handles navigation between screens.
 import * as store from './store.js';
-import { esc, icon, toast } from './ui.js';
+import { esc, icon, toast, getTheme, setTheme } from './ui.js';
 import * as home from './screens/home.js';
 import * as items from './screens/items.js';
 import * as cookbook from './screens/cookbook.js';
@@ -103,6 +103,7 @@ function route() {
   if (app.data) app.render();
 }
 
+setTheme(getTheme());
 document.querySelectorAll('[data-icon]').forEach((el) => (el.innerHTML = icon[el.dataset.icon]));
 window.addEventListener('hashchange', route);
 route();

@@ -186,3 +186,16 @@ export function hashOf(str) {
   for (const ch of String(str)) h = (h * 31 + ch.codePointAt(0)) >>> 0;
   return h;
 }
+
+// ---------- Theme (kitchen / glass), saved on this device ----------
+
+const THEME_KEY = 'calorie-tracker-theme';
+export const getTheme = () => document.documentElement.dataset.theme || 'kitchen';
+export function setTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  try { localStorage.setItem(THEME_KEY, theme); } catch { /* storage unavailable: applies for this visit only */ }
+  // Match the iPhone status bar area to the theme.
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+    m.content = theme === 'glass' ? '#0b1020' : m.media.includes('dark') ? '#1b1511' : '#f3ebdf';
+  });
+}
