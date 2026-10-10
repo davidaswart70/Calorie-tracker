@@ -867,3 +867,6 @@ body[data-screen="bar"] .page-head .icon-btn { background: var(--butter); color:
 .wrapped-banner b { font-family: var(--serif); font-size: 18px; }
 .list li.tap { border-radius: 0; }
 .list .item-emoji { font-size: 24px; width: 32px; text-align: center; flex: none; }
+
+/* --- Emoji vs line icon (glyph() renders both; Kitchen shows the emoji, Glass the icon) --- */
+.ico { display: none; width: 1em; height: 1em; vertical-align: -0.15em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
