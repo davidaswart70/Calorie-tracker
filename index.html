@@ -42,6 +42,15 @@
   <div id="sheet-root"></div>
   <div id="toast" class="toast glass" role="status" aria-live="polite"></div>
 
+  <script>
+    // Fresh files on every open (see sw.js). The first time it takes over, reload once
+    // so this visit already runs the latest version.
+    if ('serviceWorker' in navigator) {
+      const hadController = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+      navigator.serviceWorker.addEventListener('controllerchange', () => { if (!hadController) location.reload(); });
+    }
+  </script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
