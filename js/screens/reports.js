@@ -4,7 +4,7 @@ import { esc, fmt0, fmt1, kcal, kj, prettyDate, icon, seg, wireSegs, saveInBackg
 import { ring, donut, bars, line, legend, animate } from '../charts.js';
 import { groupedLogRows, wireEntries, openLogSheet } from './log.js';
 import { playWrapped } from './wrapped-view.js';
-import { openMealSheet } from './meal.js';
+import { openMealSheet, openDrinkSheet } from './meal.js';
 import { awardsTab } from './awards-view.js';
 import { maintenanceCard, wireMaintenanceCard } from './maintenance.js';
 import { glyph } from '../glyphs.js';
@@ -109,7 +109,7 @@ function dayTab(el, app, st) {
 
     <section class="card glass">
       <div class="card-head"><h2>Entries</h2>
-        <div class="row"><button class="btn secondary small" id="add">${icon.plus} Item</button><button class="btn secondary small" id="add-meal">${icon.plus} Meal</button></div></div>
+        <div class="row"><button class="btn secondary small" id="add">${icon.plus} Item</button><button class="btn secondary small" id="add-meal">${icon.plus} Meal</button><button class="btn secondary small" id="add-drink">${icon.plus} Drink</button></div></div>
       ${entries.length ? groupedLogRows(entries) : '<div class="empty"><p>Nothing logged on this day.</p></div>'}
     </section>`;
 
@@ -130,6 +130,7 @@ function dayTab(el, app, st) {
   }));
   el.querySelector('#add').onclick = () => openLogSheet(app, null, st.day);
   el.querySelector('#add-meal').onclick = () => openMealSheet(app, st.day);
+  el.querySelector('#add-drink').onclick = () => openDrinkSheet(app, st.day);
   wireEntries(el, app);
 }
 

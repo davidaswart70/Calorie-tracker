@@ -4,7 +4,7 @@ import { esc, fmt0, kj, icon, prettyDate } from '../ui.js';
 import { openLogSheet, openExerciseSheet, groupedLogRows, wireEntries } from './log.js';
 import { fitsCard, wireFitsCard, fastingCard, wireFastingCard } from './today-cards.js';
 import { wrappedBanner, wireWrappedBanner } from './wrapped-view.js';
-import { openMealSheet } from './meal.js';
+import { openMealSheet, openDrinkSheet } from './meal.js';
 import { streakStrip, wireStreakStrip } from './awards-view.js';
 
 export function render(el, app) {
@@ -23,7 +23,8 @@ export function render(el, app) {
     <div class="actions">
       <button class="btn" id="log-food">${icon.plus} Food or drink</button>
       <button class="btn" id="log-meal">${icon.plus} Meal</button>
-      <button class="btn secondary wide" id="log-ex">${icon.flame} Exercise</button>
+      <button class="btn" id="log-drink">${icon.plus} Drink</button>
+      <button class="btn secondary" id="log-ex">${icon.flame} Exercise</button>
     </div>
     ${wrappedBanner(app)}
     ${fitsCard(app, day, target)}
@@ -42,6 +43,7 @@ export function render(el, app) {
 
   el.querySelector('#log-food').onclick = () => openLogSheet(app);
   el.querySelector('#log-meal').onclick = () => openMealSheet(app);
+  el.querySelector('#log-drink').onclick = () => openDrinkSheet(app);
   el.querySelector('#log-ex').onclick = () => openExerciseSheet(app);
   wireEntries(el, app);
   wireStreakStrip(el, app);
