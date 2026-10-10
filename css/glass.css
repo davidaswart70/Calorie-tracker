@@ -1,0 +1,132 @@
+/* =========================================================
+   Glass theme: Apple Liquid Glass-style look.
+   Active when <html data-theme="glass"> (Profile → Theme). Always dark:
+   clear glass panels with bright rims over a glowing colour wallpaper.
+   ========================================================= */
+
+html[data-theme="glass"] { color-scheme: dark; }
+html[data-theme="glass"], html[data-theme="glass"] * {
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "DM Sans", sans-serif;
+  --serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", "DM Sans", sans-serif;
+  --chalk: -apple-system, BlinkMacSystemFont, "SF Pro Display", "DM Sans", sans-serif;
+  --text: #ffffff; --text-2: rgba(255, 255, 255, 0.78); --text-3: rgba(255, 255, 255, 0.56);
+  --line: rgba(255, 255, 255, 0.16); --field: rgba(255, 255, 255, 0.10); --track: rgba(255, 255, 255, 0.16);
+  --glass: rgba(255, 255, 255, 0.12); --glass-strong: rgba(255, 255, 255, 0.18); --glass-border: rgba(255, 255, 255, 0.35);
+  --green: #4cd98a; --green-strong: #8af2b6; --green-soft: rgba(76, 217, 138, 0.2); --on-green: #ffffff;
+  --tomato: #ff8a6a; --butter: #ffe08a; --amber: #ffc46b; --amber-soft: rgba(255, 196, 107, 0.2);
+  --red: #ff8a80; --red-soft: rgba(255, 138, 128, 0.18);
+  --protein: #2aa862; --carbs: #4a8ae3; --fat: #bd8526; /* same validated set as dark mode */
+  --rim: inset 1.5px 1.5px 0 rgba(255, 255, 255, 0.55), inset -1px -1px 0 rgba(255, 255, 255, 0.12), inset 0 0 22px rgba(255, 255, 255, 0.06);
+  --pane: linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.06) 45%, rgba(255, 255, 255, 0.10));
+}
+
+/* The wallpaper the glass sits on */
+html[data-theme="glass"] body, html[data-theme="glass"] body[data-screen] { background: #0b1020 !important; color: #fff; }
+html[data-theme="glass"] .backdrop {
+  display: block !important; position: fixed !important; inset: 0 !important; height: auto !important; z-index: -1 !important;
+  background:
+    radial-gradient(60% 50% at 15% 10%, #2bd38a 0%, transparent 60%),
+    radial-gradient(55% 45% at 90% 20%, #4f7bff 0%, transparent 60%),
+    radial-gradient(60% 50% at 70% 85%, #ff7a59 0%, transparent 60%),
+    radial-gradient(50% 40% at 10% 80%, #b04dff 0%, transparent 60%), #0b1020 !important;
+  -webkit-mask-image: none !important; mask-image: none !important;
+  animation: glassDrift 30s ease-in-out infinite alternate;
+}
+@keyframes glassDrift { to { filter: hue-rotate(25deg) brightness(1.08); } }
+
+/* Glass panels */
+html[data-theme="glass"] :is(.card.glass, .streaks.glass, .magnet, .recipe-card, .chalkboard, .fridge-door, .tile, .badge-card,
+  .icon-btn:not(.plain), .seg, .input, .choice, .fast-streak, .streak-chip.on, .celebrate-card) {
+  background: var(--pane) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(190%) brightness(1.08) !important;
+  backdrop-filter: blur(22px) saturate(190%) brightness(1.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.36) !important;
+  border-image: none !important;
+  box-shadow: var(--rim), 0 18px 40px -18px rgba(0, 0, 0, 0.55) !important;
+  color: #fff !important;
+}
+html[data-theme="glass"] .card.glass { border-radius: 30px !important; position: relative; overflow: hidden; }
+html[data-theme="glass"] .card.glass::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(120% 60% at 0% 0%, rgba(255, 255, 255, 0.16), transparent 50%);
+}
+html[data-theme="glass"] .card.glass > * { position: relative; z-index: 1; }
+html[data-theme="glass"] .choice.active { border-color: var(--green) !important; background: rgba(76, 217, 138, 0.22) !important; }
+html[data-theme="glass"] .input::placeholder { color: rgba(255, 255, 255, 0.5); }
+html[data-theme="glass"] select.input option { color: #111; }
+
+/* Type: Apple-style bold sans */
+html[data-theme="glass"] :is(.page-head h1, .card h2, .sheet-head h2, .celebrate-card h2, .ring-label strong, .ring-center strong,
+  .tile b, .big, .stat b, .magnet-kcal, .rc-kcal, .rc-title, .menu-line, .streak-chip b, .fast-time, .fast-streak b, .wrapped-banner b) {
+  font-family: var(--font) !important; font-weight: 700 !important; letter-spacing: -0.02em; font-variation-settings: normal;
+}
+html[data-theme="glass"] .page-head h1 { font-size: 34px !important; }
+html[data-theme="glass"] .eyebrow { color: rgba(255, 255, 255, 0.7) !important; }
+
+/* Undo kitchen props */
+html[data-theme="glass"] .placemat { background-image: none !important; }
+html[data-theme="glass"] .fridge-door { padding: 14px !important; }
+html[data-theme="glass"] .fridge-door::after { display: none !important; }
+html[data-theme="glass"] .magnet { transform: none !important; border-radius: 24px !important; }
+html[data-theme="glass"] .magnet-tag { background: rgba(255, 255, 255, 0.2) !important; color: #fff !important; }
+html[data-theme="glass"] .recipe-card { transform: none !important; border-radius: 26px !important; }
+html[data-theme="glass"] .rc-head { border-bottom-color: rgba(255, 255, 255, 0.25) !important; }
+html[data-theme="glass"] .rc-body { background: none !important; }
+html[data-theme="glass"] :is(.rc-body p, .rc-kcal small) { color: rgba(255, 255, 255, 0.8) !important; }
+html[data-theme="glass"] .rc-title { font-size: 22px !important; }
+html[data-theme="glass"] .chalkboard { border-radius: 30px !important; }
+html[data-theme="glass"] .menu-line { font-size: 19px !important; }
+html[data-theme="glass"] .menu-dots { border-bottom: 2px dotted rgba(255, 255, 255, 0.35) !important; transform: translateY(-5px) !important; }
+html[data-theme="glass"] .menu-kcal::after { font-size: 13px !important; }
+html[data-theme="glass"] .menu-item { border-bottom-color: rgba(255, 255, 255, 0.14) !important; }
+html[data-theme="glass"] body[data-screen="reports"] .card.glass { background-size: auto !important; }
+
+/* Plate becomes a glowing glass ring */
+html[data-theme="glass"] .ring.plate { filter: drop-shadow(0 0 18px rgba(76, 217, 138, 0.35)) !important; }
+html[data-theme="glass"] .ring.plate .plate-base { fill: rgba(255, 255, 255, 0.08) !important; stroke: rgba(255, 255, 255, 0.4) !important; }
+html[data-theme="glass"] .ring.plate .plate-well { fill: rgba(255, 255, 255, 0.05) !important; stroke: rgba(255, 255, 255, 0.18) !important; }
+html[data-theme="glass"] .ring.plate .track { stroke: rgba(255, 255, 255, 0.14) !important; }
+html[data-theme="glass"] .ring.plate .value { stroke: #4cd98a !important; }
+html[data-theme="glass"] .ring.plate.over .value { stroke: #ff8a6a !important; }
+html[data-theme="glass"] .ring.plate :is(.ring-label, .ring-label span) { color: #fff !important; }
+
+/* Buttons: tinted glass pills */
+html[data-theme="glass"] .btn {
+  border-radius: 999px !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%); backdrop-filter: blur(16px) saturate(180%);
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.5), 0 10px 24px -12px rgba(0, 0, 0, 0.5) !important;
+}
+html[data-theme="glass"] .btn:not(.secondary):not(.ghost):not(.danger) { background: rgba(76, 217, 138, 0.55) !important; color: #fff !important; border: 1px solid rgba(255, 255, 255, 0.45) !important; }
+html[data-theme="glass"] :is(.btn.secondary, .btn.ghost) { background: rgba(255, 255, 255, 0.16) !important; color: #fff !important; border: 1px solid rgba(255, 255, 255, 0.35) !important; }
+html[data-theme="glass"] .btn.danger { background: rgba(255, 138, 128, 0.2) !important; color: #ffd0cb !important; border: 1px solid rgba(255, 138, 128, 0.4) !important; }
+html[data-theme="glass"] .wrapped-banner { color: #fff !important; border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: var(--rim), 0 14px 30px -14px rgba(0, 0, 0, 0.6) !important; }
+
+/* Floating glass tab bar with a lens-like active pill */
+html[data-theme="glass"] .tabbar {
+  background: rgba(255, 255, 255, 0.14) !important; border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(200%) !important; backdrop-filter: blur(24px) saturate(200%) !important;
+  box-shadow: inset 1.5px 1.5px 0 rgba(255, 255, 255, 0.55), 0 20px 40px -16px rgba(0, 0, 0, 0.6) !important;
+}
+html[data-theme="glass"] .tabbar a { color: rgba(255, 255, 255, 0.75) !important; }
+html[data-theme="glass"] .tabbar a.active { color: #fff !important; }
+html[data-theme="glass"] .tab-indicator { background: rgba(255, 255, 255, 0.22) !important; box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.6), 0 4px 14px rgba(0, 0, 0, 0.25); }
+
+/* Sheets, toasts, tooltips, pop-ups */
+html[data-theme="glass"] .sheet {
+  background: rgba(28, 32, 52, 0.62) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(180%) !important; backdrop-filter: blur(30px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important; box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.5) !important;
+}
+html[data-theme="glass"] .sheet::before { display: none !important; }
+html[data-theme="glass"] .toast { background: rgba(28, 32, 52, 0.7) !important; color: #fff; border: 1px solid rgba(255, 255, 255, 0.3) !important; }
+html[data-theme="glass"] .toast.error { color: #ffb3ab !important; }
+html[data-theme="glass"] .tip { background: rgba(20, 24, 40, 0.88) !important; color: #fff; border-color: rgba(255, 255, 255, 0.25) !important; }
+html[data-theme="glass"] .celebrate-card { background: rgba(28, 32, 52, 0.7) !important; }
+html[data-theme="glass"] .seg button { color: rgba(255, 255, 255, 0.75) !important; }
+html[data-theme="glass"] .seg button.active { background: rgba(255, 255, 255, 0.28) !important; color: #fff !important; box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.45) !important; }
+html[data-theme="glass"] .badge-label { background: rgba(76, 217, 138, 0.25) !important; color: #b8ffd6 !important; }
+html[data-theme="glass"] .badge-est { background: rgba(255, 200, 90, 0.22) !important; color: #ffe2a6 !important; }
+html[data-theme="glass"] .badge-card.earned { border-color: rgba(76, 217, 138, 0.8) !important; background: linear-gradient(135deg, rgba(76, 217, 138, 0.3), rgba(255, 255, 255, 0.06)) !important; }
+html[data-theme="glass"] .preview { background: rgba(255, 255, 255, 0.10); border: 1px solid rgba(255, 255, 255, 0.2); }
+html[data-theme="glass"] .notice { background: rgba(255, 196, 107, 0.18); color: #ffe2a6; }
+html[data-theme="glass"] .notice.ok { background: rgba(76, 217, 138, 0.18); color: #b8ffd6; }

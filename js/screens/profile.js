@@ -1,6 +1,6 @@
 // Profile & goal: body details, activity level, goal picker and recommended calories.
 import * as N from '../nutrition.js';
-import { esc, fmt0, fmt1, kj, icon, seg, segValue, wireSegs, saveInBackground } from '../ui.js';
+import { esc, fmt0, fmt1, kj, icon, seg, segValue, wireSegs, saveInBackground, getTheme, setTheme } from '../ui.js';
 import { maintenanceCard, wireMaintenanceCard } from './maintenance.js';
 
 export function render(el, app) {
@@ -56,6 +56,12 @@ export function render(el, app) {
         ${seg('fast', [['', 'Off'], ['12', '12 h'], ['14', '14 h'], ['16', '16 h'], ['18', '18 h'], ['20', '20 h']], String(s.fastingHours || ''))}
         <p class="tiny" style="margin:6px 0 0">Drinks under ${N.FAST_BREAK_KCAL} kcal (black coffee, rooibos, sparkling water) don’t break a fast.</p></div>
       <button class="btn block" id="save">Save profile</button>
+    </section>
+
+    <section class="card glass" id="theme-card">
+      <h2>Theme</h2>
+      <p class="small muted" style="margin:-4px 0 12px">How the app looks on this device.</p>
+      ${seg('theme', [['kitchen', '🍳 Kitchen'], ['glass', '🫧 Glass']], getTheme())}
     </section>
 
     <section class="card glass">
@@ -136,6 +142,7 @@ export function render(el, app) {
 
   wireSegs(el, draw);
   wireMaintenanceCard(el, app);
+  wireSegs($('theme-card'), (_, theme) => setTheme(theme));
   ['age', 'height', 'weight', 'bodyfat'].forEach((id) => ($(id).oninput = draw));
   $('activity').querySelectorAll('.choice').forEach((b) => (b.onclick = () => {
     activity = b.dataset.id;
