@@ -7,7 +7,7 @@ import { esc, icon } from '../ui.js';
  * `rows` = [{ itemType, itemId, quantity, unit }]. `exclude` = { type, id } to leave out (the item itself).
  * Returns { get(): rows } and calls onChange() on every edit.
  */
-export function ingredientEditor(el, app, rows, { exclude = null, onChange = () => {}, addLabel = 'Add ingredient' } = {}) {
+export function ingredientEditor(el, app, rows, { exclude = null, onChange = () => {}, addLabel = 'Add ingredient', drinkFirst = false } = {}) {
   const { foods, drinks } = app.data;
   const options = [
     ...foods.map((f) => ({ key: `food:${f.id}`, type: 'food', item: f })),
@@ -16,10 +16,16 @@ export function ingredientEditor(el, app, rows, { exclude = null, onChange = () 
   const byKey = new Map(options.map((o) => [o.key, o]));
   let list = rows.map((r) => ({ ...r }));
 
+  // With drinkFirst, items already used in drinks (milk, espresso, syrups…) are listed first.
+  const inDrinks = new Set(drinkFirst
+    ? (app.data.ingredients || []).filter((i) => i.parentType === 'drink').map((i) => `${i.itemType}:${i.itemId}`)
+    : []);
+  const group = (label, list, selected) => (list.length ? `<optgroup label="${label}">${list.map((o) => opt(o, selected)).join('')}</optgroup>` : '');
   const optionHtml = (selected) => `
     <option value="">Choose…</option>
-    ${foods.length ? `<optgroup label="Our Fridge">${options.filter((o) => o.type === 'food').map((o) => opt(o, selected)).join('')}</optgroup>` : ''}
-    ${drinks.length ? `<optgroup label="Our Bar">${options.filter((o) => o.type === 'drink').map((o) => opt(o, selected)).join('')}</optgroup>` : ''}`;
+    ${group('Drink ingredients', options.filter((o) => inDrinks.has(o.key)), selected)}
+    ${group('Our Fridge', options.filter((o) => o.type === 'food' && !inDrinks.has(o.key)), selected)}
+    ${group('Our Bar', options.filter((o) => o.type === 'drink' && !inDrinks.has(o.key)), selected)}`;
   const opt = (o, selected) => `<option value="${esc(o.key)}" ${o.key === selected ? 'selected' : ''}>${esc(o.item.name)}</option>`;
 
   const unitsFor = (key) => {
