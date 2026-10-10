@@ -405,6 +405,8 @@ textarea.input { min-height: 70px; resize: vertical; }
 .pick-item { display: block; width: 100%; text-align: left; font: inherit; color: var(--text); background: none; border: 0; border-radius: var(--r-sm); padding: 10px 8px; cursor: pointer; }
 .pick-item:active, .pick-item:hover { background: var(--green-soft); }
 .pick-empty { margin: 6px 8px; }
+.preview .budget { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); line-height: 1.5; }
+.preview .budget .over { color: var(--red); }
 @keyframes pickIn { from { opacity: 0; transform: translateY(-4px); } }
 
 /* ---------- Bottom sheet ---------- */
