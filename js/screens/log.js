@@ -1,6 +1,7 @@
 // Bottom sheets for logging food/drinks/recipes and exercise.
 import * as N from '../nutrition.js';
 import { esc, fmt0, fmt1, kcal, kj, macroLine, sourceBadge, openSheet, saveInBackground, seg, segValue, wireSegs, icon, unitLabel, foodEmoji } from '../ui.js';
+import { glyph } from '../glyphs.js';
 
 const TYPE_LABEL = { food: 'Fridge', drink: 'Bar', recipe: 'Cookbook' };
 const round1 = (v) => Math.round(v * 10) / 10;
@@ -54,7 +55,7 @@ export function openLogSheet(app, pre = null, date = N.dateStr()) {
         results.innerHTML = items.map(({ type, item }, i) => {
           const p = N.displayPortion(app.data, type, item);
           return `<li class="tap" data-i="${i}">
-            <span class="item-emoji" aria-hidden="true">${type === 'recipe' ? '📖' : foodEmoji(item.name, type)}</span>
+            <span class="item-emoji" aria-hidden="true">${glyph(type === 'recipe' ? '📖' : foodEmoji(item.name, type))}</span>
             <div class="grow"><div class="title">${esc(item.name)}</div>
               <div class="sub">per ${esc(p.label)}</div></div>
             <div class="value num">${fmt0(p.kcal)}<small>kcal</small></div></li>`;
@@ -312,7 +313,7 @@ export function groupedLogRows(entries) {
     const rows = sorted.filter((l) => (m.id === 'exercise' ? l.type === 'exercise' : l.type !== 'exercise' && N.mealTime(l.time).id === m.id));
     if (!rows.length) continue;
     const total = rows.reduce((s, l) => s + N.num(l.kcal), 0);
-    groups.push(`<li class="group-head"><span>${m.emoji} ${esc(m.label)}</span><span class="num">${m.id === 'exercise' ? '−' : ''}${fmt0(total)} kcal</span></li>${rows.map(logRow).join('')}`);
+    groups.push(`<li class="group-head"><span>${glyph(m.emoji)} ${esc(m.label)}</span><span class="num">${m.id === 'exercise' ? '−' : ''}${fmt0(total)} kcal</span></li>${rows.map(logRow).join('')}`);
   }
   return `<ul class="list grouped">${groups.join('')}</ul>`;
 }

@@ -83,7 +83,7 @@ export function weekWrapped(data, start) {
   const split = N.mealTimeSplit(logs, start, end).sort((a, b) => b.share - a.share);
   const late = split.find((r) => r.id === 'late');
   slides.push({ id: 'when', emoji: split[0].emoji, kicker: 'Biggest meal time', big: split[0].label,
-    sub: `${round(split[0].share * 100)}% of your calories${late.share >= 0.1 && split[0].id !== 'late' ? ` · late-night snacks were ${round(late.share * 100)}% 🌙` : ''}`, theme: 'blue' });
+    sub: `${round(split[0].share * 100)}% of your calories${late.share >= 0.1 && split[0].id !== 'late' ? ` · late-night snacks were ${round(late.share * 100)}%` : ''}`, theme: 'blue' });
 
   if (rep.burned > 0) {
     slides.push({ id: 'exercise', emoji: '🔥', kicker: 'You burned', big: `${round(rep.burned).toLocaleString('en-GB')} kcal`,

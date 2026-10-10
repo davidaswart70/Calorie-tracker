@@ -1,6 +1,7 @@
 // Weekly Wrapped: Home banner and the full-screen story player.
 import { weekWrapped, lastWeekStart } from '../wrapped.js';
 import { esc, icon } from '../ui.js';
+import { glyph } from '../glyphs.js';
 
 const SEEN_KEY = 'calorie-tracker-wrapped-seen';
 const SLIDE_MS = 5000;
@@ -13,7 +14,7 @@ export function wrappedBanner(app) {
   const start = lastWeekStart();
   if (seenWeek() === start || !weekWrapped(app.data, start)) return '';
   return `<button class="wrapped-banner" id="wrapped-banner">
-    <span class="wrapped-gift">🎁</span>
+    <span class="wrapped-gift">${glyph('🎁')}</span>
     <span class="grow"><b>Your week is wrapped</b><small>Tap to see last week’s highlights</small></span>
     <span class="wrapped-play">▶</span>
   </button>`;
@@ -53,7 +54,7 @@ export function playWrapped(app, start) {
     const s = slides[i];
     root.dataset.theme = s.theme;
     box.innerHTML = `
-      <div class="story-emoji">${s.emoji}</div>
+      <div class="story-emoji">${glyph(s.emoji)}</div>
       <p class="story-kicker">${esc(s.kicker)}</p>
       <h2 class="story-big">${esc(s.big)}</h2>
       <p class="story-sub">${esc(s.sub)}</p>`;

@@ -61,7 +61,7 @@ export function render(el, app) {
     <section class="card glass" id="theme-card">
       <h2>Theme</h2>
       <p class="small muted" style="margin:-4px 0 12px">How the app looks on this device.</p>
-      ${seg('theme', [['kitchen', '🍳 Kitchen'], ['glass', '🫧 Glass']], getTheme())}
+      ${seg('theme', [['kitchen', 'Kitchen'], ['glass', 'Glass']], getTheme())}
     </section>
 
     <section class="card glass">

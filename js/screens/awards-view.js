@@ -2,13 +2,14 @@
 import * as N from '../nutrition.js';
 import { evaluateAwards } from '../awards.js';
 import { esc } from '../ui.js';
+import { glyph } from '../glyphs.js';
 
 const SEEN_KEY = 'calorie-tracker-awards-seen';
 
 /** Small row of current streaks for Home. Tapping it opens the Awards tab. */
 export function streakStrip(app) {
   const s = N.streaks(app.data.logs, app.data.settings);
-  const chip = (emoji, n, label) => `<span class="streak-chip ${n ? 'on' : ''}"><b>${emoji} ${n}</b><small>${label}</small></span>`;
+  const chip = (emoji, n, label) => `<span class="streak-chip ${n ? 'on' : ''}"><b>${glyph(emoji)} ${n}</b><small>${label}</small></span>`;
   return `<a class="streaks glass" href="#reports" id="streaks">
     ${chip('🔥', s.logging.current, 'day streak')}
     ${chip('🎯', s.onTarget.current, 'on target')}
@@ -25,7 +26,7 @@ export function wireStreakStrip(el, app) {
 
 function badge(b) {
   return `<div class="badge-card ${b.earned ? 'earned' : 'locked'}">
-    <div class="badge-emoji">${b.emoji}</div>
+    <div class="badge-emoji">${glyph(b.emoji)}</div>
     <b>${esc(b.title)}</b>
     <small>${esc(b.desc)}</small>
     ${b.earned ? '<span class="badge-done">Unlocked</span>' : `<div class="share-bar anim"><i style="--w:${(b.progress * 100).toFixed(1)}%"></i></div><small class="num">${esc(b.progressText)}</small>`}
@@ -39,7 +40,7 @@ export function awardsTab(el, app) {
   const earned = all.filter((b) => b.earned);
   const next = all.filter((b) => !b.earned).sort((a, b) => b.progress - a.progress);
   const groups = [...new Set(all.map((b) => b.group))];
-  const tile = (emoji, label, st) => `<div class="tile streak-tile"><span>${emoji} ${label}</span><b class="num">${st.current}</b><small class="num">days now · best ${st.best}</small></div>`;
+  const tile = (emoji, label, st) => `<div class="tile streak-tile"><span>${glyph(emoji)} ${label}</span><b class="num">${st.current}</b><small class="num">days now · best ${st.best}</small></div>`;
 
   el.innerHTML = `
     <section class="card glass">
@@ -49,7 +50,7 @@ export function awardsTab(el, app) {
         ${tile('🎯', 'On target', s.onTarget)}
         ${tile('💪', 'Protein goal', s.protein)}
         ${N.num(app.data.settings.fastingHours) ? tile('⏳', 'Fasting goal', N.fastingState(app.data.logs, app.data.settings.fastingHours).streak) : ''}
-        <div class="tile"><span>🏆 Awards</span><b class="num">${earned.length}/${all.length}</b><small>unlocked</small></div>
+        <div class="tile"><span>${glyph('🏆')} Awards</span><b class="num">${earned.length}/${all.length}</b><small>unlocked</small></div>
       </div>
     </section>
     ${next.length ? `<section class="card glass">
@@ -98,11 +99,11 @@ function celebrate(list, app) {
   root.innerHTML = `
     <canvas></canvas>
     <div class="celebrate-card glass" role="dialog" aria-label="Award unlocked">
-      <div class="badge-emoji big">${list[0].emoji}</div>
+      <div class="badge-emoji big">${glyph(list[0].emoji)}</div>
       <p class="eyebrow">${list.length > 1 ? `${list.length} awards unlocked!` : 'Award unlocked!'}</p>
       <h2>${esc(list[0].title)}</h2>
       <p class="small muted">${esc(list[0].desc)}</p>
-      ${list.length > 1 ? `<p class="small">${list.slice(1).map((b) => `${b.emoji} ${esc(b.title)}`).join(' · ')}</p>` : ''}
+      ${list.length > 1 ? `<p class="small">${list.slice(1).map((b) => `${glyph(b.emoji)} ${esc(b.title)}`).join(' · ')}</p>` : ''}
       <div class="sheet-actions"><button class="btn ghost" data-close>Nice</button><a class="btn" href="#reports" data-awards>See awards</a></div>
     </div>`;
   document.body.append(root);

@@ -3,6 +3,7 @@ import * as N from '../nutrition.js';
 import { esc, fmt0, fmt1, icon } from '../ui.js';
 import { ring, animate } from '../charts.js';
 import { openLogSheet } from './log.js';
+import { glyph } from '../glyphs.js';
 
 // ---------- What can I still eat? ----------
 
@@ -59,11 +60,11 @@ function fastingHtml(app) {
   const goal = N.num(app.data.settings.fastingHours);
   const f = N.fastingState(app.data.logs, goal);
   if (f.sinceMin === null) {
-    return `<div class="fast-row"><div class="grow"><b>⏳ Fasting timer</b><div class="small muted">Starts after your first logged meal.</div></div></div>`;
+    return `<div class="fast-row"><div class="grow"><b>${glyph('⏳')} Fasting timer</b><div class="small muted">Starts after your first logged meal.</div></div></div>`;
   }
   const status = !goal
     ? '<a href="#profile">Set a fasting goal</a>'
-    : f.reached ? `Goal of ${goal} h reached 🎉` : `Goal ${goal} h · eat from ${clock(f.endsAtMin)}${Math.floor(f.endsAtMin / 1440) > Math.floor((f.lastAt + f.sinceMin) / 1440) ? ' tomorrow' : ''}`;
+    : f.reached ? `Goal of ${goal} h reached ${glyph('🎉')}` : `Goal ${goal} h · eat from ${clock(f.endsAtMin)}${Math.floor(f.endsAtMin / 1440) > Math.floor((f.lastAt + f.sinceMin) / 1440) ? ' tomorrow' : ''}`;
   return `<div class="fast-row">
     ${goal ? ring({ value: f.sinceMin, max: f.goalMin, cls: f.reached ? 'protein' : 'carbs', size: 64, stroke: 7, center: `<strong class="num">${Math.round(f.progress * 100)}%</strong>` }) : ''}
     <div class="grow">

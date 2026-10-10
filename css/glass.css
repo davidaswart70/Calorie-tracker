@@ -130,3 +130,21 @@ html[data-theme="glass"] .badge-card.earned { border-color: rgba(76, 217, 138, 0
 html[data-theme="glass"] .preview { background: rgba(255, 255, 255, 0.10); border: 1px solid rgba(255, 255, 255, 0.2); }
 html[data-theme="glass"] .notice { background: rgba(255, 196, 107, 0.18); color: #ffe2a6; }
 html[data-theme="glass"] .notice.ok { background: rgba(76, 217, 138, 0.18); color: #b8ffd6; }
+
+/* No emoji in Glass: line icons in the tab-bar style instead */
+html[data-theme="glass"] .emo { display: none !important; }
+html[data-theme="glass"] .ico { display: inline-block; }
+html[data-theme="glass"] .magnet-emoji .ico, html[data-theme="glass"] .badge-emoji .ico {
+  width: 42px; height: 42px; padding: 10px; box-sizing: border-box; border-radius: 14px;
+  background: rgba(255, 255, 255, 0.16); box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.45);
+}
+html[data-theme="glass"] .badge-card.earned .badge-emoji .ico { background: rgba(76, 217, 138, 0.35); }
+html[data-theme="glass"] .badge-card.locked .badge-emoji { filter: none; opacity: 0.5; }
+html[data-theme="glass"] .badge-emoji.big .ico { width: 84px; height: 84px; padding: 18px; border-radius: 26px; stroke-width: 1.6; }
+html[data-theme="glass"] .story-emoji .ico { width: 92px; height: 92px; stroke-width: 1.4; }
+html[data-theme="glass"] .wrapped-gift .ico { width: 30px; height: 30px; }
+html[data-theme="glass"] .small-banner .wrapped-gift .ico { width: 24px; height: 24px; }
+html[data-theme="glass"] .item-emoji .ico { width: 24px; height: 24px; }
+html[data-theme="glass"] .menu-name .ico { width: 20px; height: 20px; vertical-align: -0.1em; margin-right: 2px; }
+html[data-theme="glass"] .streak-chip b .ico { width: 18px; height: 18px; vertical-align: -0.12em; }
+html[data-theme="glass"] .group-head .ico, html[data-theme="glass"] .tile span .ico { width: 15px; height: 15px; vertical-align: -0.15em; margin-right: 2px; }

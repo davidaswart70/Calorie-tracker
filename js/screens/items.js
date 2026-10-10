@@ -3,6 +3,7 @@ import * as N from '../nutrition.js';
 import { esc, fmt0, fmt1, kcal, kj, macroLine, sourceBadge, openSheet, saveInBackground, seg, segValue, wireSegs, icon, foodEmoji, hashOf } from '../ui.js';
 import { ingredientEditor, previewTotals } from './ingredients.js';
 import { openLogSheet } from './log.js';
+import { glyph } from '../glyphs.js';
 
 const CONFIG = {
   food: { table: 'foods', title: 'Our Fridge', eyebrow: 'What’s in the fridge', noun: 'food', defaultUnit: 'g' },
@@ -33,7 +34,7 @@ export function render(el, app, type) {
         // A fridge magnet: colour and tilt vary per item but stay the same between visits.
         const h = hashOf(item.name);
         return `<button class="magnet m${h % 6}" style="--tilt:${(h % 7) - 3}deg" data-id="${esc(item.id)}">
-          <span class="magnet-emoji">${foodEmoji(item.name, type)}</span>
+          <span class="magnet-emoji">${glyph(foodEmoji(item.name, type))}</span>
           <b>${esc(item.name)}</b>
           <span class="magnet-kcal num">${fmt0(p.kcal)} <small>kcal / ${esc(p.label)}</small></span>
           <span class="magnet-tag ${p.source === 'label' ? 'label' : 'est'}">${p.source === 'label' ? 'Label' : 'Est.'}</span>
@@ -44,7 +45,7 @@ export function render(el, app, type) {
         .map((i) => N.findItem(app.data, i.itemType, i.itemId)?.name).filter(Boolean);
       const sub = ings.length ? ings.join(' · ') : item.notes || `per ${p.label}`;
       return `<div class="menu-item" data-id="${esc(item.id)}" role="button" tabindex="0">
-        <div class="menu-line"><span class="menu-name">${foodEmoji(item.name, type)} ${esc(item.name)}</span><span class="menu-dots"></span><span class="menu-kcal num">${fmt0(p.kcal)}</span></div>
+        <div class="menu-line"><span class="menu-name">${glyph(foodEmoji(item.name, type))} ${esc(item.name)}</span><span class="menu-dots"></span><span class="menu-kcal num">${fmt0(p.kcal)}</span></div>
         <div class="menu-sub">${esc(sub)}</div>
         <div class="menu-sub num">${macroLine(p)} · ${p.source === 'label' ? 'label' : 'estimate'}</div>
       </div>`;
