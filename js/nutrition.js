@@ -522,8 +522,14 @@ export function suggestions(data, kcalLeft, proteinLeft, limit = 4) {
 
 // ---------- Fasting ----------
 
-/** Entries above this many kcal end a fast (black coffee, rooibos, sparkling water don't). */
+/** Food above this many kcal ends a fast. */
 export const FAST_BREAK_KCAL = 10;
+/** Drinks (coffee with milk, a latte, iced tea…) only end a fast above this; bigger ones count as a meal. */
+export const FAST_BREAK_DRINK_KCAL = 100;
+
+const isDrinkEntry = (l) => l.type === 'drink' || l.unit === 'drink';
+/** Whether a log entry ends a fast. */
+export const breaksFast = (l) => !isExercise(l) && num(l.kcal) > (isDrinkEntry(l) ? FAST_BREAK_DRINK_KCAL : FAST_BREAK_KCAL);
 
 const minuteOf = (date, time) => { const [h, m] = hhmm(time).split(':').map(Number); return dayNum(date) * 1440 + h * 60 + m; };
 
@@ -534,7 +540,7 @@ const minuteOf = (date, time) => { const [h, m] = hhmm(time).split(':').map(Numb
 export function fastingState(logs, goalHours, now = new Date()) {
   const nowMin = dayNum(dateStr(now)) * 1440 + now.getHours() * 60 + now.getMinutes();
   const breaks = logs
-    .filter((l) => !isExercise(l) && num(l.kcal) > FAST_BREAK_KCAL && l.date && l.time)
+    .filter((l) => breaksFast(l) && l.date && l.time)
     .map((l) => minuteOf(l.date, l.time))
     .filter((t) => t <= nowMin)
     .sort((a, b) => a - b);
