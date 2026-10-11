@@ -185,6 +185,13 @@ test('fasting timer and streak', () => {
   assert.deepEqual(f.streak, { current: 2, best: 2 });
   assert.equal(N.fastingState(logs, 16, new Date(2026, 9, 9, 12, 30)).streak.current, 3);
   assert.equal(N.fastingState([], 16, now).sinceMin, null);
+  // A latte is a drink: it doesn't restart the timer. A smoothie-sized drink or a snack does.
+  const latte = { date: '2026-10-09', time: '08:30', type: 'drink', name: 'Latte', kcal: 60 };
+  assert.equal(N.fastingState([...logs, latte], 16, now).sinceMin, 14 * 60 + 30);
+  const oneOff = { ...latte, type: 'meal', unit: 'drink', kcal: 80 };
+  assert.equal(N.fastingState([...logs, oneOff], 16, now).sinceMin, 14 * 60 + 30);
+  assert.equal(N.fastingState([...logs, { ...latte, kcal: 250 }], 16, now).sinceMin, 2 * 60);
+  assert.equal(N.fastingState([...logs, at('2026-10-09', '08:30', 30)], 16, now).sinceMin, 2 * 60);
 });
 
 test('exercise uses net MET', () => {

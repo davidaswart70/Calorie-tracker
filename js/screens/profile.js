@@ -54,7 +54,7 @@ export function render(el, app) {
         <span class="switch"><input type="checkbox" id="addex" ${s.addExercise === 'yes' ? 'checked' : ''}><span></span></span></label>
       <div><div class="small muted" style="font-weight:600;margin:0 0 6px 4px">Fasting goal (hours between your last meal and the next)</div>
         ${seg('fast', [['', 'Off'], ['12', '12 h'], ['14', '14 h'], ['16', '16 h'], ['18', '18 h'], ['20', '20 h']], String(s.fastingHours || ''))}
-        <p class="tiny" style="margin:6px 0 0">Drinks under ${N.FAST_BREAK_KCAL} kcal (black coffee, rooibos, sparkling water) don’t break a fast.</p></div>
+        <p class="tiny" style="margin:6px 0 0">Drinks up to ${N.FAST_BREAK_DRINK_KCAL} kcal (coffee, a latte, iced tea) don’t restart the timer; only food does (and bigger drinks like smoothies).</p></div>
       <button class="btn block" id="save">Save profile</button>
     </section>
 
