@@ -1,21 +1,12 @@
 // Log a one-off meal or drink made of several Fridge/Bar items,
 // optionally saving it as a recipe (meal) or to Our Bar (drink).
 import * as N from '../nutrition.js';
-import { esc, fmt0, fmt1, kcal, kj, macroLine, sourceBadge, openSheet, saveInBackground, icon } from '../ui.js';
-import { ingredientEditor, previewTotals } from './ingredients.js';
+import { esc, fmt0, kcal, kj, macroLine, sourceBadge, openSheet, saveInBackground, icon } from '../ui.js';
+import { ingredientEditor, previewTotals, describeRows } from './ingredients.js';
 import { openItemForm } from './items.js';
 
 const round1 = (v) => Math.round(v * 10) / 10;
 const nowTime = () => new Date().toTimeString().slice(0, 5);
-
-/** e.g. "2 × Smoked ham, 70 g Hass avocado" */
-function describe(app, rows) {
-  return rows.map((r) => {
-    const item = N.findItem(app.data, r.itemType, r.itemId);
-    const name = item ? item.name : '(deleted item)';
-    return r.unit === 'serving' ? `${fmt1(r.quantity)} × ${name}` : `${fmt1(r.quantity)} ${r.unit} ${name}`;
-  }).join(', ');
-}
 
 const MODES = {
   meal: {
@@ -120,7 +111,7 @@ export function openMealSheet(app, date = N.dateStr(), mode = 'meal') {
       if (!m.rows.length) return alert('Add at least one item with an amount.');
       if (m.saveRecipe && !m.name) { alert(`Give the ${M.noun} a name to save it.`); return $('name').focus(); }
       const t = previewTotals(app, m.rows);
-      const label = describe(app, m.rows);
+      const label = describeRows(app, m.rows);
       const entry = {
         date: m.date, time: nowTime(), quantity: 1,
         kcal: round1(t.kcal), protein: round1(t.protein), carbs: round1(t.carbs), fat: round1(t.fat), source: t.source,
