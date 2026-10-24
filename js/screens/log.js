@@ -2,6 +2,7 @@
 import * as N from '../nutrition.js';
 import { esc, fmt0, fmt1, kcal, kj, macroLine, sourceBadge, openSheet, saveInBackground, seg, segValue, wireSegs, icon, unitLabel, foodEmoji } from '../ui.js';
 import { glyph } from '../glyphs.js';
+import { ingredientEditor, previewTotals, describeRows } from './ingredients.js';
 
 const TYPE_LABEL = { food: 'Fridge', drink: 'Bar', recipe: 'Cookbook' };
 const round1 = (v) => Math.round(v * 10) / 10;
@@ -88,6 +89,8 @@ export function openLogSheet(app, pre = null, date = N.dateStr()) {
 
 function showAmountForm(app, body, close, { type, item }, date) {
   const units = N.unitsFor(app.data, type, item);
+  const composite = N.isComposite(app.data, type, item);
+  let editor = null; // set when the ingredients are changed for this one entry
   const defUnit = units.includes('serving') ? 'serving' : units[0];
   const defQty = defUnit === 'serving' ? 1 : 100;
   const unitName = (u) => (u === 'serving'
@@ -101,7 +104,13 @@ function showAmountForm(app, body, close, { type, item }, date) {
       <label class="field"><span>Amount</span><input class="input num" id="qty" inputmode="decimal" value="${defQty}"></label>
       <label class="field"><span>Date</span><input class="input" id="date" type="date" value="${date}"></label>
     </div>
-    ${units.length > 1 ? seg('unit', units.map((u) => [u, unitName(u)]), defUnit) : `<div class="small muted">Unit: ${esc(unitName(units[0]))}</div>`}
+    <div id="unit-row">${units.length > 1 ? seg('unit', units.map((u) => [u, unitName(u)]), defUnit) : `<div class="small muted">Unit: ${esc(unitName(units[0]))}</div>`}</div>
+    ${composite ? `<button type="button" class="btn ghost small" id="customise">${icon.pencil} Change ingredients this time</button>
+      <div id="custom" hidden>
+        <div class="small muted" style="font-weight:600;margin:0 0 6px 4px">Ingredients for this portion</div>
+        <div id="ings"></div>
+        <p class="tiny" style="margin:8px 4px 0">Only this entry changes; the saved ${type === 'recipe' ? 'recipe' : 'drink'} stays the same.</p>
+      </div>` : ''}
     <div class="preview" id="preview"></div>
     <div class="sheet-actions"><button class="btn block" id="log">Log it</button></div>`;
 
@@ -109,7 +118,7 @@ function showAmountForm(app, body, close, { type, item }, date) {
   const preview = body.querySelector('#preview');
   const unit = () => (units.length > 1 ? segValue(body, 'unit') : units[0]);
 
-  const calc = () => N.nutritionFor(app.data, type, item, qty.value, unit());
+  const calc = () => (editor ? previewTotals(app, editor.get()) : N.nutritionFor(app.data, type, item, qty.value, unit()));
   const draw = () => {
     const n = calc();
     preview.innerHTML = `
@@ -121,8 +130,25 @@ function showAmountForm(app, body, close, { type, item }, date) {
   qty.oninput = draw;
   draw();
 
+  // Start from the saved ingredients, scaled to the amount chosen above.
+  body.querySelector('#customise')?.addEventListener('click', (e) => {
+    const whole = N.compositeTotals(app.data, type, item.id);
+    const portion = N.nutritionFor(app.data, type, item, N.num(qty.value) || 1, unit());
+    const factor = whole.kcal > 0 ? portion.kcal / whole.kcal
+      : (N.num(qty.value) || 1) / (type === 'recipe' ? N.num(item.servings) || 1 : 1);
+    const rows = N.ingredientsOf(app.data, type, item.id).map((r) => ({
+      itemType: r.itemType, itemId: r.itemId, unit: r.unit, quantity: round1(N.num(r.quantity) * factor),
+    }));
+    // The amount now lives in the ingredient list, so hide the serving controls.
+    for (const el of [e.currentTarget, qty.closest('.field'), body.querySelector('#unit-row')]) el.style.display = 'none';
+    body.querySelector('#custom').hidden = false;
+    editor = ingredientEditor(body.querySelector('#ings'), app, rows, { onChange: draw, drinkFirst: type === 'drink' });
+    draw();
+  });
+
   body.querySelector('#log').onclick = () => {
     const q = N.num(qty.value);
+    if (editor) return logCustom();
     if (q <= 0) return qty.focus();
     const n = calc();
     close();
@@ -141,6 +167,28 @@ function showAmountForm(app, body, close, { type, item }, date) {
       source: n.source,
     }), `Logged ${item.name}`);
   };
+
+  // Changed ingredients are logged like a one-off meal, so the saved recipe is untouched.
+  function logCustom() {
+    const rows = editor.get();
+    if (!rows.length) return alert('Add at least one ingredient with an amount.');
+    const n = previewTotals(app, rows);
+    close();
+    saveInBackground(app, () => app.store.add('logs', {
+      date: body.querySelector('#date').value || N.dateStr(),
+      time: nowTime(),
+      type: 'meal',
+      itemId: '',
+      name: `${item.name} (changed): ${describeRows(app, rows)}`,
+      quantity: 1,
+      unit: type === 'drink' ? 'drink' : 'meal',
+      kcal: round1(n.kcal),
+      protein: round1(n.protein),
+      carbs: round1(n.carbs),
+      fat: round1(n.fat),
+      source: n.source,
+    }), `Logged ${item.name}`);
+  }
 }
 
 /** Log exercise using MET values. */

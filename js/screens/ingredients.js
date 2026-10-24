@@ -1,6 +1,6 @@
 // Editable list of ingredients (used by Cookbook recipes and Bar drinks).
 import * as N from '../nutrition.js';
-import { esc, icon } from '../ui.js';
+import { esc, fmt1, icon } from '../ui.js';
 
 /**
  * Render an ingredient editor into `el`.
@@ -125,4 +125,13 @@ export function previewTotals(app, rows) {
   const tempId = '__preview__';
   const data = { ...app.data, ingredients: rows.map((r) => ({ ...r, parentType: 'recipe', parentId: tempId })) };
   return N.compositeTotals(data, 'recipe', tempId);
+}
+
+/** e.g. "2 × Smoked ham, 70 g Hass avocado" */
+export function describeRows(app, rows) {
+  return rows.map((r) => {
+    const item = N.findItem(app.data, r.itemType, r.itemId);
+    const name = item ? item.name : '(deleted item)';
+    return r.unit === 'serving' ? `${fmt1(r.quantity)} × ${name}` : `${fmt1(r.quantity)} ${r.unit} ${name}`;
+  }).join(', ');
 }
